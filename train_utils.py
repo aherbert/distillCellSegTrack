@@ -24,7 +24,7 @@ class KD_loss(torch.nn.Module):
         map_loss = F.binary_cross_entropy_with_logits(y_3_pred[:,2] ,y_3_true_map,  reduction='mean')
 
         y_3_loss = flow_loss + map_loss
-        
+
         return y_32_loss * self.alpha, y_3_loss * self.beta
 
 def trainEpoch(unet, train_loader, validation_loader, loss_fn, optimiser, scheduler, epoch_num, device, progress=True):
@@ -45,7 +45,7 @@ def trainEpoch(unet, train_loader, validation_loader, loss_fn, optimiser, schedu
         loss = loss_32 + loss_map
         train_y_32_loss += loss_32.item()
         train_map_loss += loss_map.item()
-        
+
         loss.backward()
 
         optimiser.step() # update model parameters
@@ -76,7 +76,7 @@ def trainEpoch(unet, train_loader, validation_loader, loss_fn, optimiser, schedu
 
     val_y_32_loss, val_map_loss, val_IoU = 0, 0, 0
     for image, upsample, cp_output in validation_loader:
-    
+
         if device is not None:
             (image, upsample, cp_output) = (image.to(device),upsample.to(device),cp_output.to(device)) # sending the data to the device (cpu or GPU)
 
@@ -106,25 +106,25 @@ def trainEpoch(unet, train_loader, validation_loader, loss_fn, optimiser, schedu
         torch.cuda.empty_cache()
 
     val_y_32_loss, val_map_loss, val_IoU = val_y_32_loss/len(validation_loader), val_map_loss/len(validation_loader), val_IoU/len(validation_loader)
-    
+
     #we might add displaying later on
     if progress:
         if epoch_num is None:
             print('Train 32 loss: ', train_y_32_loss,'Train map loss', train_map_loss, 'Train IoU', train_IoU, 'Val 32 loss: ', val_y_32_loss, 'Val map loss: ', val_map_loss, 'Val IoU: ', val_IoU, 'Time: ', time.time()-time_start)
         else:
             print('Epoch: ', epoch_num, 'Train 32 loss: ', train_y_32_loss,'Train map loss', train_map_loss, 'Train IoU', train_IoU, 'Val 32 loss: ', val_y_32_loss, 'Val map loss: ', val_map_loss, 'Val IoU: ', val_IoU, 'Time: ', time.time()-time_start)
-        
+
     torch.cuda.empty_cache()
 
     return unet, train_y_32_loss, train_map_loss, train_IoU, val_y_32_loss, val_map_loss, val_IoU
 
-def train_model(n_base,num_epochs,name_of_model, train_loader, validation_loader, device=None,progress=True,seed=None):    
-    
+def train_model(n_base,num_epochs,name_of_model, train_loader, validation_loader, device=None,progress=True,seed=None):
+
     torch.manual_seed(seed)
     student_model = CPnet(nbase=n_base, nout=3, sz=3,
-                residual_on=True, style_on=True, 
+                residual_on=True, style_on=True,
                 concatenation=False, mkldnn=False)
-    
+
     if device is not None:
         student_model = student_model.to(device)
 
@@ -143,11 +143,12 @@ def train_model(n_base,num_epochs,name_of_model, train_loader, validation_loader
 
 if __name__ == '__main__':
 
-    cellpose_model_directory = "/Users/rehanzuberi/Downloads/development/distillCellSegTrack/cellpose_models/Nuclei_Hoechst"
-    image_folder = "/Users/rehanzuberi/Downloads/development/distillCellSegTrack/saved_cell_images_1237"
-    
+    import os
+    base = os.path.dirname(os.path.abspath(__file__));
+
+    cellpose_model_directory = os.path.join(base, "cellpose_models", "Nuclei_Hoechst")
+    image_folder = os.path.join(base, "saved_cell_images_1237")
+
     train_loader, validation_loader = get_training_and_validation_loaders(cellpose_model_directory, image_folder, channel = 0, augment = True)
 
-    student_model = train_model([1,32],100,'resnet_nuc_32',train_loader, validation_loader, device='mps',progress=True,seed=23944)
-
-    
+    student_model = train_model([1,32],100,'resnet_nuc_32',train_loader, validation_loader, device='cuda',progress=True,seed=23944)

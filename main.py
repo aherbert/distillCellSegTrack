@@ -1,13 +1,16 @@
+import os;
 from data_utils import get_training_and_validation_loaders
 from train_utils import train_model
 from method_seeding import find_seed
 
 if __name__ == '__main__':
 
-    cellpose_model_directory = "/Users/rehanzuberi/Downloads/development/distillCellSegTrack/cellpose_models/Nuclei_Hoechst"
-    image_folder = "/Users/rehanzuberi/Downloads/development/distillCellSegTrack/saved_cell_images_1237"
-    device = 'mps'
-    
+    base = os.path.dirname(os.path.abspath(__file__));
+
+    cellpose_model_directory = os.path.join(base, "cellpose_models", "Nuclei_Hoechst")
+    image_folder = os.path.join(base, "saved_cell_images_1237")
+    device = 'cuda'
+
     #channel 0: nuclei
     #channel 1: cell
     #no channel: both cell and nuclei
@@ -19,4 +22,3 @@ if __name__ == '__main__':
     seed = find_seed(n_base=n_base, epochs=1, train_loader=train_loader, validation_loader=validation_loader, num_iter=num_iter, device=device,progress=True)
 
     student_model = train_model([1,32],100,'student_models/resnet_testing',train_loader, validation_loader, device=device,progress=True,seed=seed)
-

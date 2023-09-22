@@ -10,7 +10,7 @@ from cellpose import resnet_torch
 from cellpose import transforms, dynamics
 import cv2
 import time
-from unet_architecture import UNet
+#from unet_architecture import UNet
 import torch
 from torch.utils.data import Dataset, DataLoader
 import torch.nn.functional as F
@@ -35,7 +35,7 @@ def pred(x, network, return_conv=False,channels=None):
     """ convert imgs to torch and run network model and return numpy """
 
     return_training_data = False
-    #X = x.to('mps')
+    #X = x.to('cuda')
     X = x
     #self.net.eval()
     with torch.no_grad():
@@ -43,21 +43,21 @@ def pred(x, network, return_conv=False,channels=None):
             if channels == 1:
                 X = X[:, 0, :, :]
                 X = X.unsqueeze(1)
-                #X = X.to('mps')
+                #X = X.to('cuda')
                 y, style = network(X)
             else:
-                #X = X.to('mps')
+                #X = X.to('cuda')
                 y, style = network(X)
         else:
             channel_32_output, final_output = network(X, training_data=True)
             return channel_32_output, final_output
     del X
-    y = y.to('mps')
-    style = style.to('mps')
+    y = y.to('cuda')
+    style = style.to('cuda')
     if return_conv:
-        conv = conv.to('mps')
+        conv = conv.to('cuda')
         y = np.concatenate((y, conv), axis=1)
-   
+
     return y, style
 
 def make_prediction(image, model, device, type):
@@ -149,7 +149,7 @@ def run_tiled(imgi, network, augment=False, bsize=224, tile_overlap=0.1, return_
             y = np.reshape(y, (ny, nx, nout, bsize, bsize))
             y = transforms.unaugment_tiles(y, network)
             y = np.reshape(y, (-1, nout, bsize, bsize))
-        
+
         yf = transforms.average_tiles(y, ysub, xsub, Ly, Lx)
         yf = yf[:,:imgi.shape[1],:imgi.shape[2]]
         return yf, y32
@@ -157,7 +157,7 @@ def run_tiled(imgi, network, augment=False, bsize=224, tile_overlap=0.1, return_
 def run_net(imgs, network, augment=False, tile=True, tile_overlap=0.1, bsize=224,
                  return_conv=False,return_training_data=False,channels=None,unnormed=None):
 
-        if imgs.ndim==4:  
+        if imgs.ndim==4:
             # make image Lz x nchan x Ly x Lx for net
             imgs = np.transpose(imgs, (0,3,1,2))
             detranspose = (0,2,3,1)
@@ -200,7 +200,7 @@ def run_net(imgs, network, augment=False, tile=True, tile_overlap=0.1, bsize=224
         y = y[slc]
         # transpose so channels axis is last again
         y = np.transpose(y, detranspose)
-        
+
         return y, style
 
 def run_cp(x, network, compute_masks=True, normalize=True, invert=False,
@@ -210,12 +210,12 @@ def run_cp(x, network, compute_masks=True, normalize=True, invert=False,
             flow_threshold=0.4, min_size=15,
             interp=True, anisotropy=1.0, do_3D=False, stitch_threshold=0.0,
             return_training_data=False,channels=None):
-   
+
     tic = time.time()
     shape = x.shape
     print('shape:',shape)
-    nimg = shape[0]        
-   
+    nimg = shape[0]
+
     bd, tr = None, None
     #tqdm_out = utils.TqdmToLogger(models_logger, level=logging.INFO)
     #iterator = trange(nimg,file=tqdm_out) if nimg>1 else range(nimg)
@@ -224,7 +224,7 @@ def run_cp(x, network, compute_masks=True, normalize=True, invert=False,
     if resample:
         dP = np.zeros((2, nimg, shape[1], shape[2]), np.float32)
         cellprob = np.zeros((nimg, shape[1], shape[2]), np.float32)
-       
+
     else:
         dP = np.zeros((2, nimg, int(shape[1]*rescale), int(shape[2]*rescale)), np.float32)
         cellprob = np.zeros((nimg, int(shape[1]*rescale), int(shape[2]*rescale)), np.float32)
@@ -250,11 +250,11 @@ def run_cp(x, network, compute_masks=True, normalize=True, invert=False,
                 bd = np.zeros_like(cellprob)
             bd[i] = yf[:,:,3]
     del yf, style
-    
-    
+
+
     net_time = time.time() - tic
 
-    
+
     tic=time.time()
     niter = 200 if (do_3D and not resample) else (1 / rescale * 200)
     masks, p = [], []
@@ -267,25 +267,30 @@ def run_cp(x, network, compute_masks=True, normalize=True, invert=False,
                                                 use_gpu=use_gpu, device=device)
         masks.append(outputs[0])
         p.append(outputs[1])
-        
+
     masks = np.array(masks)
     p = np.array(p)
-    
+
     if stitch_threshold > 0 and nimg > 1:
         masks = utils.stitch3D(masks, stitch_threshold=stitch_threshold)
         masks = utils.fill_holes_and_remove_small_masks(masks, min_size=min_size)
 
     flow_time = time.time() - tic
     masks, dP, cellprob, p = masks.squeeze(), dP.squeeze(), cellprob.squeeze(), p.squeeze()
-    
+
     return masks, styles, dP, cellprob, p
 
 #need an iou function
 
-if __name__ == '__main__': 
+if __name__ == '__main__':
 
-    student_model_directory = "/Users/rehanzuberi/Documents/Development/distillCellSegTrack/pipeline/resnet_nuc_32_adp"
-    image_folder = "/Users/rehanzuberi/Downloads/development/distillCellSegTrack/pipeline/saved_cell_images_1237"
+    base = os.path.dirname(os.path.abspath(__file__));
+
+    #student_model_directory = "/home/ah403/git/distillCellSegTrack/pipeline/resnet_nuc_32_adp"
+    #image_folder = "/home/ah403/git/distillCellSegTrack/pipeline/saved_cell_images_1237"
+
+    student_model_directory = os.path.join(base, "student_models", "resnet_nuc_32")
+    image_folder = os.path.join(base, "saved_cell_images_1237")
 
     combined_images = []
     for filename in os.listdir(image_folder):
@@ -297,10 +302,10 @@ if __name__ == '__main__':
     model = CPnet(nbase=[1,32], nout=3, sz=3,
                 residual_on=True, style_on=True,
                 concatenation=False, mkldnn=False)
-    model.load_model(student_model_directory, device=torch.device('mps'))
+    model.load_model(student_model_directory, device=torch.device('cuda'))
 
-    masks = make_prediction(np.array(combined_images[27:28]), model, device='mps',type='nuclei')
-    
+    masks = make_prediction(np.array(combined_images[-1:]), model, device='cuda',type='nuclei')
+
     plt.imshow(masks)
     plt.show()
 
