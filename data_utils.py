@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import scipy
 import logging
-from cellpose import transforms, models
+from cellpose import transforms
 from resnet_archi import CPnet
 from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset, DataLoader
@@ -70,7 +70,7 @@ def run_net(imgs, network, unnormed, augment=False, tile_overlap=0.1, bsize=224,
                                     tile_overlap=tile_overlap,unnormed=unnormed)
         return tiles, channel_32_outputs, final_outputs
 
-def run_cp(x, network, normalize=True, invert=False, rescale=1.0, augment=False): #, tile=True):
+def run_cp(x, network, normalize=True, invert=False, augment=False): #, tile=True):
 
     iterator = range(x.shape[0])
 
@@ -82,9 +82,6 @@ def run_cp(x, network, normalize=True, invert=False, rescale=1.0, augment=False)
         img_unnormed = img.copy()
         if normalize or invert:
             img = transforms.normalize_img(img, invert=invert)
-        if rescale != 1.0:
-            img = transforms.resize_image(img, rsz=rescale)
-            img_unnormed = transforms.resize_image(img_unnormed, rsz=rescale)
 
         tiles, channel_32_outputs, final_outputs = run_net(img, network=network, augment=augment, tile_overlap=0.1, bsize=224,
                 return_conv=False, return_training_data=True, unnormed=img_unnormed)
@@ -118,7 +115,7 @@ def get_clean_train_data(tiled_images_input, intermediate_outputs, flows_and_cel
 
     return tiled_images_input_train_clean, tiled_intermediate_outputs_train_clean, tiled_flows_and_cellprob_output_train_clean
 
-def get_data_cp_clean(unet,combined_images,rescale):
+def get_data_cp_clean(unet,combined_images):
     tiled_images_final = []
     intermediate_outputs_final = []
     flows_and_cellprob_output_final = []
@@ -137,7 +134,7 @@ def get_data_cp_clean(unet,combined_images,rescale):
         # Change view from (n,C,X,Y) to (n,X,Y,C)
         x = x.transpose((0,2,3,1))
 
-        tiled_images_input, intermdiate_outputs, flows_and_cellprob_output = run_cp(x,unet,rescale=rescale)
+        tiled_images_input, intermdiate_outputs, flows_and_cellprob_output = run_cp(x,unet)
         tiled_images_input_train_clean, tiled_intermediate_outputs_train_clean, tiled_flows_and_cellprob_output_train_clean = get_clean_train_data(tiled_images_input, intermdiate_outputs, flows_and_cellprob_output)
         tiled_images_final.append(tiled_images_input_train_clean)
         intermediate_outputs_final.append(tiled_intermediate_outputs_train_clean)
@@ -278,9 +275,6 @@ def rotation_augmentation(tiled_images_final, intermediate_outputs_final, flows_
     return tiled_images_final, intermediate_outputs_final, flows_and_cellprob_output_final
 
 def get_training_and_validation_loaders(cellpose_model_file, images, channel=None, augment=False, device=None):
-    # Whole cellpose model
-    segmentation_model = models.CellposeModel(model_type=cellpose_model_file)
-    rescale = segmentation_model.diam_mean / segmentation_model.diam_labels
 
     # Only the architecture, easier to extract the data
     cpnet = CPnet(nbase=[2, 32, 64, 128, 256], nout=3, sz=3, residual_on=True)
@@ -314,16 +308,16 @@ def get_training_and_validation_loaders(cellpose_model_file, images, channel=Non
 
     logging.info(f'Processing {len(combined_images)} images')
     tiled_images_final, intermediate_outputs_final, flows_and_cellprob_output_final = get_data_cp_clean(
-        cpnet, combined_images, rescale)
+        cpnet, combined_images)
 
     if augment == True:
-        logging.info(f'Processing augmentations')
+        logging.info('Processing augmentations')
 
         # Convert the lists to PyTorch tensors
         tiled_images_final, intermediate_outputs_final, flows_and_cellprob_output_final = rotation_augmentation(tiled_images_final, intermediate_outputs_final, flows_and_cellprob_output_final)
         tiled_images_final, intermediate_outputs_final, flows_and_cellprob_output_final = brightness_augmentation(tiled_images_final, intermediate_outputs_final, flows_and_cellprob_output_final)
 
-    logging.info(f'Splitting into training and validation data')
+    logging.info('Splitting into training and validation data')
     train_images_tiled, val_images_tiled, train_upsamples, val_upsamples, train_ys, val_ys = train_test_split(
         tiled_images_final, intermediate_outputs_final, flows_and_cellprob_output_final,
         test_size=0.1, random_state=42)
