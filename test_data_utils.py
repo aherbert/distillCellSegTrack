@@ -14,7 +14,7 @@
 
 import argparse
 import os
-#import torch
+import psutil
 
 def file_or_dir_path(string):
     if os.path.isfile(string) or os.path.isdir(string):
@@ -33,8 +33,22 @@ def run(args):
     import time
     import logging
 
-    logging.basicConfig(format='[%(asctime)s] %(levelname)s - %(message)s',
+    logging.basicConfig(
+        format='[%(asctime)s] %(levelname)s - %(mem)s - %(message)s',
         level=logging.INFO)
+    
+    # Debug memory usage
+    if args.memory:
+        old_factory = logging.getLogRecordFactory()
+        
+        def record_factory(*args, **kwargs):
+            record = old_factory(*args, **kwargs)
+            process = psutil.Process()
+            i = process.memory_info()
+            record.mem = f'rss={i.rss/1024**3:8.4f}, vms={i.vms/1024**3:8.4f}'
+            return record
+        
+        logging.setLogRecordFactory(record_factory)
 
     start_time = time.time()
     train_loader, validation_loader = get_training_and_validation_loaders(
@@ -66,6 +80,8 @@ if __name__ == '__main__':
         help='Device (default: %(default)s)')
     parser.add_argument('--augment', dest='augment', action='store_true',
         help='Perform argmentations')
+    parser.add_argument('--memory', dest='memory', action='store_true',
+        help='Debug memory usage')
 
     args = parser.parse_args()
     run(args)

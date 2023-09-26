@@ -3,6 +3,7 @@ import glob
 import numpy as np
 import torch
 import scipy
+import logging
 from cellpose import transforms, models
 from resnet_archi import CPnet
 from sklearn.model_selection import train_test_split
@@ -123,6 +124,7 @@ def get_data_cp_clean(unet,combined_images,rescale):
     flows_and_cellprob_output_final = []
 
     for i in range(len(combined_images)):
+        logging.info(f'Processing {i+1}/{len(combined_images)}')
 
         x = combined_images[i]
 
@@ -310,14 +312,18 @@ def get_training_and_validation_loaders(cellpose_model_file, images, channel=Non
     else:
         combined_images = np.array(combined_images)
 
-    tiled_images_final, intermediate_outputs_final, flows_and_cellprob_output_final = get_data_cp_clean(cpnet, combined_images, rescale=rescale)
+    logging.info(f'Processing {len(combined_images)} images')
+    tiled_images_final, intermediate_outputs_final, flows_and_cellprob_output_final = get_data_cp_clean(
+        cpnet, combined_images, rescale)
 
     if augment == True:
+        logging.info(f'Processing augmentations')
 
         # Convert the lists to PyTorch tensors
         tiled_images_final, intermediate_outputs_final, flows_and_cellprob_output_final = rotation_augmentation(tiled_images_final, intermediate_outputs_final, flows_and_cellprob_output_final)
         tiled_images_final, intermediate_outputs_final, flows_and_cellprob_output_final = brightness_augmentation(tiled_images_final, intermediate_outputs_final, flows_and_cellprob_output_final)
 
+    logging.info(f'Splitting into training and validation data')
     train_images_tiled, val_images_tiled, train_upsamples, val_upsamples, train_ys, val_ys = train_test_split(
         tiled_images_final, intermediate_outputs_final, flows_and_cellprob_output_final,
         test_size=0.1, random_state=42)
