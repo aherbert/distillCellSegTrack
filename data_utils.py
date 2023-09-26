@@ -1,4 +1,5 @@
 import os
+import glob
 import numpy as np
 import torch
 import scipy
@@ -261,6 +262,7 @@ def rotation_augmentation(tiled_images_final, intermediate_outputs_final, flows_
         if random_numbers[image_idx] < 0.5:
             rotated_90, rotated_180, rotated_270 = apply_rotation(original_image)
 
+            # XXX: Here the CellPose outputs are not rotated, or rebuilt
             # Append the rotated tensors to the list
             new_tiled_images_final.extend([rotated_90, rotated_180, rotated_270])
             new_intermediate_outputs_final.extend([intermediate_outputs_final[image_idx]] * 3)
@@ -273,21 +275,26 @@ def rotation_augmentation(tiled_images_final, intermediate_outputs_final, flows_
 
     return tiled_images_final, intermediate_outputs_final, flows_and_cellprob_output_final
 
-def get_training_and_validation_loaders(cellpose_model_directory, image_folder, channel=None, augment=False):
+def get_training_and_validation_loaders(cellpose_model_file, images, channel=None, augment=False, device=None):
     # Whole cellpose model
-    segmentation_model = models.CellposeModel(gpu=True, model_type=cellpose_model_directory)
+    segmentation_model = models.CellposeModel(model_type=cellpose_model_file)
     rescale = segmentation_model.diam_mean / segmentation_model.diam_labels
 
     # Only the architecture, easier to extract the data
     cpnet = CPnet(nbase=[2, 32, 64, 128, 256], nout=3, sz=3, residual_on=True)
-    cpnet.load_model(cellpose_model_directory)
+    cpnet.load_model(cellpose_model_file, device=(torch.device(device) if device else None))
 
     combined_images = []
-    for filename in os.listdir(image_folder):
-        if filename.endswith('.npy'):
-            image_path = os.path.join(image_folder, filename)
-            numpy_image = np.load(image_path)
-            combined_images.append(numpy_image)
+    if np.isscalar(images):
+        images = [images]
+    for f in images:
+        if os.path.isdir(f):
+            for filename in glob.glob(os.path.join(f, '*.npy')):
+                combined_images.append(np.load(filename))
+        elif os.path.isfile(f):
+            combined_images.append(np.load(f))
+        else:
+            raise FileNotFoundError(f)           
 
     # XXX: This makes assumptions that the input images have 1/2 channels
     if channel != None:
@@ -303,11 +310,7 @@ def get_training_and_validation_loaders(cellpose_model_directory, image_folder, 
     else:
         combined_images = np.array(combined_images)
 
-    #ATTENTION: this is to train models faster, but in experiments we would want to use more images
-    combined_images = combined_images[-1:]
-
     tiled_images_final, intermediate_outputs_final, flows_and_cellprob_output_final = get_data_cp_clean(cpnet, combined_images, rescale=rescale)
-
 
     if augment == True:
 
@@ -347,11 +350,3 @@ class ImageDataset(Dataset):
         upsample = self.upsample[idx]
         cellprob = self.cellprob[idx]
         return img, upsample, cellprob
-
-if __name__ == '__main__':
-    base = os.path.dirname(os.path.abspath(__file__));
-
-    cellpose_model_directory = os.path.join(base, "cellpose_models", "Nuclei_Hoechst")
-    image_folder = os.path.join(base, "saved_cell_images_1237")
-
-    train_loader, validation_loader = get_training_and_validation_loaders(cellpose_model_directory, image_folder, channel=0, augment=True)
