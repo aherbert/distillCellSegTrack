@@ -33,12 +33,12 @@ def run(args):
     import time
     import logging
 
-    logging.basicConfig(
-        format='[%(asctime)s] %(levelname)s - %(mem)s - %(message)s',
-        level=logging.INFO)
-    
     # Debug memory usage
     if args.memory:
+        logging.basicConfig(
+            format='[%(asctime)s] %(levelname)s - %(mem)s - %(message)s',
+            level=logging.INFO)
+
         old_factory = logging.getLogRecordFactory()
         
         def record_factory(*args, **kwargs):
@@ -49,6 +49,11 @@ def run(args):
             return record
         
         logging.setLogRecordFactory(record_factory)
+    else:
+        logging.basicConfig(
+            format='[%(asctime)s] %(levelname)s - %(message)s',
+            level=logging.INFO)
+        
 
     start_time = time.time()
     train_loader, validation_loader = get_training_and_validation_loaders(
