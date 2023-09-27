@@ -28,6 +28,12 @@ def file_path(string):
     else:
         raise FileNotFoundError(string)
 
+def dir_path(string):
+    if os.path.isdir(string):
+        return string
+    else:
+        raise NotADirectoryError(string)
+
 def run(args):
     from data_utils import get_training_and_validation_loaders
     import time
@@ -64,6 +70,17 @@ def run(args):
     m = len(validation_loader)
     logging.info(f'Loaded data : Training {n} : Validation {m} (in {t} seconds)')
     
+    if args.save_dir:
+        logging.info(f'Saving data to {args.save_dir}')
+        import numpy as np
+        for i, (image, upsample, cp_output) in enumerate(train_loader):
+            np.save(os.path.join(args.save_dir, f'train_image{i}.npy'), image)
+            np.save(os.path.join(args.save_dir, f'train_upsample{i}.npy'), upsample)
+            np.save(os.path.join(args.save_dir, f'train_cp_output{i}.npy'), cp_output)
+        for i, (image, upsample, cp_output) in enumerate(validation_loader):
+            np.save(os.path.join(args.save_dir, f'validation_image{i}.npy'), image)
+            np.save(os.path.join(args.save_dir, f'validation_upsample{i}.npy'), upsample)
+            np.save(os.path.join(args.save_dir, f'validation_cp_output{i}.npy'), cp_output)           
 
 if __name__ == '__main__':
     base = os.path.dirname(os.path.abspath(__file__));
@@ -87,6 +104,8 @@ if __name__ == '__main__':
         help='Perform argmentations')
     parser.add_argument('--memory', dest='memory', action='store_true',
         help='Debug memory usage')
+    parser.add_argument('-s', '--save', dest='save_dir', type=dir_path,
+        help='Optional save directory')
 
     args = parser.parse_args()
     run(args)
