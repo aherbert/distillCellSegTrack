@@ -74,6 +74,11 @@ def run(args):
         logging.info(f'Saving data to {args.save_dir}')
         import numpy as np
         for i, (image, upsample, cp_output) in enumerate(train_loader):
+            if i == 0:
+                logging.info(f'Image:     {image.shape} {image.dtype}')
+                logging.info(f'Upsample:  {upsample.shape} {upsample.dtype}')
+                logging.info(f'CP output: {cp_output.shape} {cp_output.dtype}')
+                
             np.save(os.path.join(args.save_dir, f'train_image{i}.npy'), image)
             np.save(os.path.join(args.save_dir, f'train_upsample{i}.npy'), upsample)
             np.save(os.path.join(args.save_dir, f'train_cp_output{i}.npy'), cp_output)
