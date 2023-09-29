@@ -165,6 +165,7 @@ def brightness_augmentation(tiled_images_final, intermediate_outputs_final, flow
     random_numbers = np.random.uniform(0, 1, tiled_images_final.shape[0])
 
     # Iterate through the tensors in tiled_images_final
+    # Image shape (n,C,X,Y)
     for image_idx in range(tiled_images_final.shape[0]):
         # Get the original image tensor from tiled_images_final
         original_image = tiled_images_final[image_idx]
@@ -175,6 +176,7 @@ def brightness_augmentation(tiled_images_final, intermediate_outputs_final, flow
         new_flows_and_cellprob_output_final.append(flows_and_cellprob_output_final[image_idx])
 
         # Apply random brightness change with a probability of 0.5
+        # Why do this with a 50% probability?
         if random_numbers[image_idx] < 0.5:
             brightness_factor = torch.tensor([torch.FloatTensor(1).uniform_(brightness_min, brightness_max)])
             new_image = adjust_brightness(original_image, brightness_factor)
@@ -202,25 +204,19 @@ def rotation_augmentation(tiled_images_final, intermediate_outputs_final, flows_
     random_numbers = np.random.uniform(0, 1, tiled_images_final.shape[0])
 
     # Iterate through the tensors in tiled_images_final
+    # Image shape (n,C,X,Y)
     for image_idx in range(tiled_images_final.shape[0]):
-        # Get the original image tensor from tiled_images_final
-        original_image = tiled_images_final[image_idx]
-
-        new_tiled_images_final.append(original_image)
+        new_tiled_images_final.append(tiled_images_final[image_idx])
         new_intermediate_outputs_final.append(intermediate_outputs_final[image_idx])
         new_flows_and_cellprob_output_final.append(flows_and_cellprob_output_final[image_idx])
 
-        # XXX: This is not a brighness change. It is rotation augmentation.
         # Why do this with a 50% probability?
-        # Apply random brightness change with a probability of 0.5
         if random_numbers[image_idx] < 0.5:
-            rotated_90, rotated_180, rotated_270 = apply_rotation(original_image)
-
-            # XXX: Here the CellPose outputs are not rotated, or rebuilt
             # Append the rotated tensors to the list
-            new_tiled_images_final.extend([rotated_90, rotated_180, rotated_270])
-            new_intermediate_outputs_final.extend([intermediate_outputs_final[image_idx]] * 3)
-            new_flows_and_cellprob_output_final.extend([flows_and_cellprob_output_final[image_idx]] * 3)
+            # Q. Is this valid?
+            new_tiled_images_final.extend(apply_rotation(tiled_images_final[image_idx]))
+            new_intermediate_outputs_final.extend(apply_rotation(intermediate_outputs_final[image_idx]))
+            new_flows_and_cellprob_output_final.extend(apply_rotation(flows_and_cellprob_output_final[image_idx]))
 
     # Convert the lists to PyTorch tensors
     tiled_images_final = torch.stack(new_tiled_images_final)
@@ -229,7 +225,7 @@ def rotation_augmentation(tiled_images_final, intermediate_outputs_final, flows_
 
     return tiled_images_final, intermediate_outputs_final, flows_and_cellprob_output_final
 
-def get_training_and_validation_loaders(cellpose_model_file, images, channel=None, augment=False, device=None):
+def create_dataset(cellpose_model_file, images, channel=None, augment=False, device=None):
 
     # Only the architecture, easier to extract the data
     cpnet = CPnet(nbase=[2, 32, 64, 128, 256], nout=3, sz=3, residual_on=True)
@@ -267,21 +263,30 @@ def get_training_and_validation_loaders(cellpose_model_file, images, channel=Non
 
     if augment == True:
         logging.info('Processing augmentations')
+        # TODO:
+        # Verify if rotation of the CP outputs is valid. Otherwise we will have
+        # to rotate the tiles and run through CPnet.
 
         # Convert the lists to PyTorch tensors
         tiled_images_final, intermediate_outputs_final, flows_and_cellprob_output_final = rotation_augmentation(tiled_images_final, intermediate_outputs_final, flows_and_cellprob_output_final)
         tiled_images_final, intermediate_outputs_final, flows_and_cellprob_output_final = brightness_augmentation(tiled_images_final, intermediate_outputs_final, flows_and_cellprob_output_final)
 
+    if channel != None:
+        # XXX: Should this remove the other channel(s)?
+        #remove the second channel of train_images_tiled and val_images_tiled
+        tiled_images_final = np.delete(tiled_images_final, channel, 1)
+
+    return tiled_images_final, intermediate_outputs_final, flows_and_cellprob_output_final
+
+def get_training_and_validation_loaders(cellpose_model_file, images, channel=None, augment=False, device=None):
+
+    tiled_images_final, intermediate_outputs_final, flows_and_cellprob_output_final = create_dataset(
+        cellpose_model_file, images, channel=channel, augment=augment, device=device)
+
     logging.info('Splitting into training and validation data')
     train_images_tiled, val_images_tiled, train_upsamples, val_upsamples, train_ys, val_ys = train_test_split(
         tiled_images_final, intermediate_outputs_final, flows_and_cellprob_output_final,
         test_size=0.1, random_state=42)
-
-    if channel != None:
-        # XXX: Should this remove the other channel(s)?
-        #remove the second channel of train_images_tiled and val_images_tiled
-        train_images_tiled = np.delete(train_images_tiled, channel, 1)
-        val_images_tiled = np.delete(val_images_tiled, channel, 1)
 
     train_dataset = ImageDataset(train_images_tiled, train_upsamples, train_ys)
     train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True)
