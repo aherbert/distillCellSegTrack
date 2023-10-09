@@ -2,10 +2,9 @@ import os
 import glob
 import numpy as np
 import torch
-import scipy
 import logging
 from cellpose import transforms
-from resnet_archi import CPnet
+from cellpose_ext import CPnetX
 from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset, DataLoader
 
@@ -13,7 +12,8 @@ def pred(x, network):
     """ convert imgs to torch and run network model and return numpy """
     X = x
     with torch.no_grad():
-        channel_32_output, final_output = network(X, training_data=True)
+        #channel_32_output, final_output = network(X, training_data=True)
+        final_output, _, channel_32_output = network(X)
         return channel_32_output, final_output
 
 def make_tiles_and_reshape(img, bsize, augment, tile_overlap):
@@ -228,7 +228,7 @@ def rotation_augmentation(tiled_images_final, intermediate_outputs_final, flows_
 def create_dataset(cellpose_model_file, images, channel=None, augment=False, device=None):
 
     # Only the architecture, easier to extract the data
-    cpnet = CPnet(nbase=[2, 32, 64, 128, 256], nout=3, sz=3, residual_on=True)
+    cpnet = CPnetX(nbase=[2, 32, 64, 128, 256], nout=3, sz=3, residual_on=True)
     cpnet.load_model(cellpose_model_file, device=(torch.device(device) if device else None))
 
     combined_images = []

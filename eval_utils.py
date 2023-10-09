@@ -2,7 +2,7 @@ import os
 import numpy as np
 from cellpose import models
 import torch
-from resnet_archi import CPnet
+from cellpose_ext import CPnetX
 
 import numpy as np
 import torch
@@ -20,7 +20,6 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 import os
-from resnet_archi import CPnet
 from cellpose import utils
 import logging
 from cellpose import models
@@ -299,7 +298,7 @@ if __name__ == '__main__':
             numpy_image = np.load(image_path)
             combined_images.append(numpy_image)
 
-    model = CPnet(nbase=[1,32], nout=3, sz=3,
+    model = CPnetX(nbase=[1,32], nout=3, sz=3,
                 residual_on=True, style_on=True,
                 concatenation=False, mkldnn=False)
     model.load_model(student_model_directory, device=torch.device('cuda'))

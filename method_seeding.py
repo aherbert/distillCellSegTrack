@@ -1,5 +1,6 @@
 from data_utils import get_training_and_validation_loaders
-from train_utils import train_model, trainEpoch, KD_loss, CPnet
+from train_utils import train_model, trainEpoch, KD_loss
+from cellpose_ext import CPnetX
 import torch
 import numpy as np
 
@@ -17,7 +18,7 @@ def find_seed(n_base, epochs, train_loader, validation_loader, num_iter, device=
     for i in range(num_iter):
         seed = random_unique_list[i]
         torch.manual_seed(seed)
-        student_model = CPnet(nbase=n_base, nout=3, sz=3,
+        student_model = CPnetX(nbase=n_base, nout=3, sz=3,
                     residual_on=True, style_on=True,
                     concatenation=False, mkldnn=False)
 
@@ -61,12 +62,15 @@ if __name__ == '__main__':
     base = os.path.dirname(os.path.abspath(__file__));
 
     cellpose_model_directory = os.path.join(base, "cellpose_models", "Nuclei_Hoechst")
-    image_folder = os.path.join(base, "saved_cell_images_1237")
+    # All images
+    images = os.path.join(base, "saved_cell_images_1237")
+    # One image
+    images = os.path.join(base, "saved_cell_images_1237", "image_0.npy")
 
-    train_loader, validation_loader = get_training_and_validation_loaders(cellpose_model_directory, image_folder, channel = 0, augment = False)
+    train_loader, validation_loader = get_training_and_validation_loaders(cellpose_model_directory, images, channel = 0, augment = False)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    #device = 'cpu'
-    seed = find_seed(n_base=[1,32], epochs=1, train_loader=train_loader, validation_loader=validation_loader, num_iter=40, device=device, progress=True)
+    device = 'cpu'
+    seed = find_seed(n_base=[1,32], epochs=1, train_loader=train_loader, validation_loader=validation_loader, num_iter=4, device=device, progress=True)
 
     #student_model = train_model([1,32],100,'student_models/resnet_testing',train_loader, validation_loader, device='cuda',progress=True,seed=23944)

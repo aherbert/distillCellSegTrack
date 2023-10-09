@@ -1,9 +1,8 @@
 import torch
 import time
-import torch
 import torch.nn.functional as F
 from torchmetrics.classification import BinaryJaccardIndex
-from resnet_archi import CPnet
+from cellpose_ext import CPnetX
 from data_utils import get_training_and_validation_loaders
 
 class KD_loss(torch.nn.Module):
@@ -37,7 +36,7 @@ def trainEpoch(unet, train_loader, validation_loader, loss_fn, optimiser, schedu
         if device is not None:
             (image, upsample, cp_output) = (image.to(device),upsample.to(device),cp_output.to(device)) # sending the data to the device (cpu or GPU)
 
-        y_32_pred, map_pred = unet(image)
+        map_pred, _, y_32_pred = unet(image)
         y_32_pred = y_32_pred.squeeze(1)
         map_pred = map_pred.squeeze(1)
 
@@ -80,7 +79,7 @@ def trainEpoch(unet, train_loader, validation_loader, loss_fn, optimiser, schedu
         if device is not None:
             (image, upsample, cp_output) = (image.to(device),upsample.to(device),cp_output.to(device)) # sending the data to the device (cpu or GPU)
 
-        y_32_pred, map_pred = unet(image)
+        map_pred, _, y_32_pred = unet(image)
 
         y_32_pred = y_32_pred.squeeze(1)
         map_pred = map_pred.squeeze(1)
@@ -121,7 +120,7 @@ def trainEpoch(unet, train_loader, validation_loader, loss_fn, optimiser, schedu
 def train_model(n_base,num_epochs,name_of_model, train_loader, validation_loader, device=None,progress=True,seed=None):
 
     torch.manual_seed(seed)
-    student_model = CPnet(nbase=n_base, nout=3, sz=3,
+    student_model = CPnetX(nbase=n_base, nout=3, sz=3,
                 residual_on=True, style_on=True,
                 concatenation=False, mkldnn=False)
 
