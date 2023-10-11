@@ -136,6 +136,7 @@ def run(args):
         start = segmentation_model._count
         c_masks_array, c_flows, c_styles = segmentation_model.eval(
             img, channels=channels,
+            batch_size=args.batch_size,
             diameter=diameter, normalize=False
         )
         logging.info(f'Saved {save_directory}: {start}-{segmentation_model._count - 1}')
@@ -175,6 +176,9 @@ if __name__ == '__main__':
         help='Save directory prefix (default: %(default)s)')
     parser.add_argument('--delete', dest='delete', action='store_true',
         help='Delete existing data (default is to error)')
+    parser.add_argument('--batch-size', dest='batch_size', type=int,
+        default=8,
+        help='Batch size (default: %(default)s)')
 
     args = parser.parse_args()
     run(args)
