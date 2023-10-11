@@ -30,9 +30,10 @@ def run(args):
     import numpy as np
 
     image = np.load(args.image)
+    axis = None if image.ndim == 2 else 0
     viewer = napari.Viewer()
     viewer.add_image(image, name=os.path.basename(args.image),
-                     channel_axis=0, blending='additive')
+                     channel_axis=axis, blending='additive')
     napari.run()
 
 if __name__ == '__main__':
