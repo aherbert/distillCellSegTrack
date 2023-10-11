@@ -1,2 +1,4 @@
 __pycache__
-test_data
+test_data_*
+test_images
+timeit.py
