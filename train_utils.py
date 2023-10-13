@@ -14,6 +14,9 @@ class KD_loss(torch.nn.Module):
     def forward(self, y_32_pred, y_32_true, y_3_pred, y_3_true):
         y_32_loss = torch.mean(y_32_true - y_32_pred)**2
 
+        # This is assuming X x Y x Ch
+        # Q. Why multiply by 5?
+        # Q. Why divide by 80 at the end?
         veci = 5. * y_3_true[:,:2]
         flow_loss = F.mse_loss(y_3_pred[:,:2], veci, reduction='mean')
         flow_loss /= 80
@@ -133,7 +136,9 @@ def train_model(n_base,num_epochs,name_of_model, train_loader, validation_loader
 
     best_val_map_loss = 1000
     for epoch in range(num_epochs):
-        student_model, train_y_32_loss, train_map_loss, train_IoU, val_y_32_loss, val_map_loss, val_IoU = trainEpoch(student_model, train_loader, validation_loader, loss_fn, optimiser, scheduler=scheduler, epoch_num=epoch, device=device, progress=progress)
+        student_model, train_y_32_loss, train_map_loss, train_IoU, val_y_32_loss, val_map_loss, val_IoU = \
+            trainEpoch(student_model, train_loader, validation_loader, loss_fn, optimiser, 
+                       scheduler=scheduler, epoch_num=epoch, device=device, progress=progress)
         if val_map_loss < best_val_map_loss:
             best_val_map_loss = val_map_loss
             torch.save(student_model.state_dict(), name_of_model)
