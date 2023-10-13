@@ -135,7 +135,7 @@ class CellposeModelX(CellposeModel):
             if not os.path.isdir(save_directory):
                 raise NotADirectoryError(save_directory)
             self._save_directory = save_directory
-        self._count = 0
+        self._count = 1
 
         # The network is created in cellpose.core.UnetModel.
         # Here we replace the network with our custom version.
@@ -198,6 +198,7 @@ class CellposeModelX(CellposeModel):
                 np.save(os.path.join(self._save_directory, f'output_{self._count+i}.npy'), y[i])
                 np.save(os.path.join(self._save_directory, f'style_{self._count+i}.npy'), style[i])
                 np.save(os.path.join(self._save_directory, f'output32_{self._count+i}.npy'), y32[i])
+                
             self._count += n
        
         return y, style
