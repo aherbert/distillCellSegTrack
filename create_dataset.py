@@ -118,7 +118,7 @@ def run(args):
 
     # Run Cellpose
     for i, image in enumerate(combined_images):
-        logging.info(f'Processing image {i}: {image}')
+        logging.info(f'Processing image {i+1}: {image}')
         img = np.load(image)
 
         # Image should be 2D/3D (with channels)
@@ -130,20 +130,27 @@ def run(args):
             if img.ndim != 3:
                 raise Exception('{image} requires 2 channels')
             img = np.dstack([img[args.nuclei_channel-1], img[args.cyto_channel-1]])
+            axes = (1, 2)
         else:
             if img.ndim == 3:
                 img = img[args.nuclei_channel-1]
             elif img.ndim != 2:
                 raise Exception('{image} requires 1 channel')
+            axes = (0, 1)
 
-        # TODO: Should this be saved?
-        start = segmentation_model._count
-        c_masks_array, c_flows, c_styles = segmentation_model.eval(
-            img, channels=channels,
-            batch_size=args.batch_size,
-            diameter=diameter, normalize=False
-        )
-        logging.info(f'Saved {save_directory}: {start}-{segmentation_model._count - 1}')
+        # Do rotations
+        for k in args.rotations:
+            logging.info(f'Processing rotation {k} on {i+1}: {image}')
+ 
+            # TODO: Should this be saved?
+            start = segmentation_model._count
+            masks_array, flows, styles = segmentation_model.eval(
+                np.rot90(img, k=k, axes=axes),
+                channels=channels,
+                batch_size=args.batch_size,
+                diameter=diameter, normalize=False
+            )
+            logging.info(f'Saved {save_directory}: {start}-{segmentation_model._count - 1}')
 
     t = time.time() - start_time
     logging.info(f'Done (in {t} seconds)')
@@ -178,6 +185,9 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--save', dest='save_dir', type=str,
         default='test_data',
         help='Save directory prefix (default: %(default)s)')
+    parser.add_argument('--rotations', dest='rotations', nargs='+', type=int,
+        default=[0],
+        help='90-degree rotations, e.g. k=0 1 2 3 (default: %(default)s)')
     parser.add_argument('--delete', dest='delete', action='store_true',
         help='Delete existing data (default is to error)')
     parser.add_argument('--batch-size', dest='batch_size', type=int,
