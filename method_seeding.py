@@ -1,6 +1,6 @@
 from data_utils import get_training_and_validation_loaders
 from train_utils import train_model, trainEpoch, KD_loss
-from cellpose_ext import CPnetX
+from cp_distill.cellpose_ext import CPnetX
 import torch
 import numpy as np
 

@@ -41,7 +41,7 @@ def run(args):
     import glob
     import torch
     import shutil
-    from cellpose_ext import CellposeModelX
+    from cp_distill.cellpose_ext import CellposeModelX
 
     # Debug memory usage
     if args.memory:
@@ -157,11 +157,11 @@ def run(args):
 
 if __name__ == '__main__':
     base = os.path.dirname(os.path.abspath(__file__));
-    cellpose_model = os.path.join(base, "cellpose_models", "Nuclei_Hoechst")
+    cellpose_model = os.path.join(base, "..", "cellpose_models", "Nuclei_Hoechst")
 
     parser = argparse.ArgumentParser(
-      description='Program to convert input images ([C] x X x Y) to a dataset.' + 
-          ' Images are assumed to be normalised to [0, 1].')
+        description='Program to convert input images ([C] x X x Y) to a dataset.' + 
+            ' Images are assumed to be normalised to [0, 1].')
 
     parser.add_argument('image', nargs='+', metavar='IMAGE',
         type=file_or_dir_path,

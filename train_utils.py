@@ -2,7 +2,7 @@ import torch
 import time
 import torch.nn.functional as F
 from torchmetrics.classification import BinaryJaccardIndex
-from cellpose_ext import CPnetX
+from cp_distill.cellpose_ext import CPnetX
 from data_utils import get_training_and_validation_loaders
 
 class KD_loss(torch.nn.Module):

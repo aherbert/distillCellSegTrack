@@ -33,10 +33,10 @@ def run(args):
     import numpy as np
     import torch
     import torch.nn.functional as F
-    from cellpose_ext import CPnetX
+    from cp_distill.cellpose_ext import CPnetX
+    from cp_distill.rotations import cp_rotate90
     from torch.utils import mkldnn as mkldnn_utils
     from torchmetrics.classification import BinaryJaccardIndex
-    from rotations import cp_rotate90
     if args.matching:
         from scipy.optimize import linear_sum_assignment
 
@@ -228,7 +228,7 @@ def run(args):
 
 if __name__ == '__main__':
     base = os.path.dirname(os.path.abspath(__file__));
-    cellpose_model = os.path.join(base, "cellpose_models", "Nuclei_Hoechst")
+    cellpose_model = os.path.join(base, "..", "cellpose_models", "Nuclei_Hoechst")
 
     parser = argparse.ArgumentParser(
       description='Program to test Cellpose using a rotated tile.')

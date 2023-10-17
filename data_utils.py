@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import logging
 from cellpose import transforms
-from cellpose_ext import CPnetX
+from cp_distill.cellpose_ext import CPnetX
 from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset, DataLoader
 

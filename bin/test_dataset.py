@@ -23,7 +23,7 @@ def dir_path(string):
 
 def run(args):
     import logging
-    from datasets import find_images, CPDataset
+    from cp_distill.datasets import find_images, CPDataset
 
     logging.basicConfig(
         format='[%(asctime)s] %(levelname)s - %(message)s',

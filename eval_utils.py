@@ -2,7 +2,7 @@ import os
 import numpy as np
 from cellpose import models
 import torch
-from cellpose_ext import CPnetX
+from cp_distill.cellpose_ext import CPnetX
 
 import numpy as np
 import torch

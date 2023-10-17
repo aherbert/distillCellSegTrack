@@ -39,7 +39,7 @@ def run(args):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(
-      description='Program to show the numpy array image using napari.')
+        description='Program to show the numpy array image using napari.')
     
     parser.add_argument('image', metavar='IMAGE',
         type=file_path,
