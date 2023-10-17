@@ -37,12 +37,12 @@ def run(args):
     from torch.utils import mkldnn as mkldnn_utils
     from torchmetrics.classification import BinaryJaccardIndex
     from rotations import cp_rotate90
-    if args.correlate:
-        from scipy.stats import pearsonr
+    if args.matching:
         from scipy.optimize import linear_sum_assignment
 
     logging.basicConfig(
         format='[%(asctime)s] %(levelname)s - %(message)s',
+        #format='[%(levelname)s - %(message)s',
         level=args.log_level)
 
     start_time = time.time()
@@ -84,6 +84,10 @@ def run(args):
         x = X.detach().cpu().numpy()
         return x
 
+    if args.matching:
+        # Cross-channel matching of 3 rotations
+        matching = [np.zeros((3, 2, 2)), np.zeros((3, 32, 32))]
+
     # Run Cellpose
     for i, image in enumerate(images):
         logging.info(f'Processing image {i}: {image}')
@@ -106,7 +110,7 @@ def run(args):
             y, _, y32 = net(X)
         y = y.squeeze()
         y32 = y32.squeeze()
-
+        
         # Set up for Jaccard
         # Use only the probability map (ignore gradients)
         sy = F.sigmoid(y[2])
@@ -147,38 +151,41 @@ def run(args):
                 np.save(os.path.join(args.save_dir, name + f"_{k*90}_0"), _from_device(a))
                 np.save(os.path.join(args.save_dir, name + f"_{k*90}_32"), _from_device(b))
 
-            if args.correlate:
-                # Perform all-vs-all correlation
+            if args.matching:
+                # Perform all-vs-all score
                 # and a minimum weight matching of channels
-                for a, b, n, name in [(y, yy, 2, 'y'), (y32, yy32, 32, 'y32')]:
-                    a = _from_device(torch.rot90(a, k=k, dims=(1,2)))
-                    b = _from_device(b)
-                    corr = np.zeros((n, n))
+                for A, B, n, name in [(y, yy, 2, 'y'), (y32, yy32, 32, 'y32')]:
+                    A = torch.rot90(A[0:n], k=k, dims=(1,2))
                     s = set(range(n))
+                    # for the correlation
+                    corr = np.zeros((n, n))
+                    B = B[0:n].reshape((n,-1))
                     for i in range(0, n):
-                        m = 0
-                        for j in range(0, n):
-                            r = pearsonr(a[i].reshape(-1), b[j].reshape(-1))[0]
-                            corr[i][j] = r
-                            logging.debug(f'Rotation %3d : {name}[{i:2d}][{j:2d}] R=%8.3f',
-                                 k*90, r)
-                            if np.abs(m) < np.abs(r):
-                                m = r
-                                ii, jj = i, j
-                        s.discard(jj)
-                        logging.debug(f'Rotation %3d : {name}[{ii:2d}][{jj:2d}] R=%8.3f',
-                             k*90, m)
+                        # Compute with torch
+                        # This computes an all-vs-all. We only require the
+                        # first row against the rest.
+                        M = torch.cat((A[i:i+1].reshape(-1).unsqueeze(0), B), dim=0)
+                        cc = torch.corrcoef(M)
+                        r = cc[0][1:].detach().cpu().numpy()
+                        corr[i] = r
+                        # Find the best
+                        j = np.argmax(np.abs(r))
+                        logging.debug(f'Rotation %3d : {name}[{i:2d}][{j:2d}] R=%8.3f',
+                             k*90, r[j])
+                        s.discard(j)
                     if s:
                         logging.debug('Rotation %3d : Unmatched y%2d %s', k*90, n, s)
                     #cost = 1 - np.abs(corr)
                     cost = 1 - corr**2   # using r^2
                     row, col = linear_sum_assignment(cost)
-                    logging.info(f'Rotation %3d : {name} Average R=%8.3f',
+                    logging.info(f'Rotation %3d : {name} Average R^2=%8.3f',
                          k*90, 1 - cost[row, col].mean())
                     for z in range(0, n):
                         i, j = row[z], col[z]
                         logging.info(f'Rotation %3d : {name}[{i:2d}][{j:2d}] R=%8.3f',
                              k*90, corr[i][j])
+                    index = 0 if n == 2 else 1
+                    matching[index][k-1][row, col] += 1
 
             # Rotate original results and compare
             ry = cp_rotate90(y, k=k)
@@ -201,6 +208,20 @@ def run(args):
         del X
         del y
         del y32
+        
+    if args.matching:
+        for k in range(1, 4):
+            for index, (n, name) in enumerate([(2, 'y'), (32, 'y32')]):
+                cost = 1 - matching[index][k-1] / len(images)
+                row, col = linear_sum_assignment(cost)
+                cost = 1 - cost
+                logging.info(f'Rotation %3d : {name} Average match=%8.3f',
+                     k*90, cost[row, col].mean())
+                for z in range(0, n):
+                    i, j = row[z], col[z]
+                    logging.info(f'Rotation %3d : {name}[{i:2d}][{j:2d}] match=%8.3f',
+                         k*90, cost[i][j])
+            
 
     t = time.time() - start_time
     logging.info(f'Done (in {t:.6g} seconds)')
@@ -231,8 +252,8 @@ if __name__ == '__main__':
         help='Save directory prefix (default: %(default)s)')
     parser.add_argument('--no-rotate-saved', dest='no_rotate_saved', action='store_true',
         help='Save the original rotated output. Default is to rotate back.')
-    parser.add_argument('--correlate', dest='correlate', action='store_true',
-        help='Perform an all-vs-all correlation on the output flows and 32-channel layers.')
+    parser.add_argument('--matching', dest='matching', action='store_true',
+        help='Perform an all-vs-all matching on the output flows and 32-channel layers.')
     parser.add_argument('--log-level', dest='log_level', type=int,
         default=20,
         help='Log level (default: %(default)s). WARNING=30; INFO=20; DEBUG=10')
