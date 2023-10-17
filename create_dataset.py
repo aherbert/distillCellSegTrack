@@ -78,6 +78,10 @@ def run(args):
                 shutil.rmtree(os.path.join(root, d))
     else:
         os.makedirs(save_directory)
+        
+    # Save options to the directory
+    with open(os.path.join(save_directory, 'settings.txt'), 'w') as f:
+        print(args, file=f)
 
     # Find input images
     combined_images = []
