@@ -35,7 +35,7 @@ def _sc_any(array):
 # layer in the network
 # Adapted from cellpose/resnet_torch.py
 class CPnetX(CPnet):
-    def __init__(self, nbase, nout, sz,
+    def __init__(self, nbase, nout=3, sz=3,
                 residual_on=True, style_on=True,
                 concatenation=False, mkldnn=False,
                 diam_mean=30.):
