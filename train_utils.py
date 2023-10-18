@@ -12,6 +12,9 @@ class KD_loss(torch.nn.Module):
         self.beta = beta
 
     def forward(self, y_32_pred, y_32_true, y_3_pred, y_3_true):
+        # This is the square of the mean difference
+        # CF. mean of the squared difference:
+        # torch.mean((y_32_true - y_32_pred)**2)
         y_32_loss = torch.mean(y_32_true - y_32_pred)**2
 
         # This is assuming X x Y x Ch
@@ -82,6 +85,7 @@ def trainEpoch(unet, train_loader, validation_loader, loss_fn, optimiser, schedu
         if device is not None:
             (image, upsample, cp_output) = (image.to(device),upsample.to(device),cp_output.to(device)) # sending the data to the device (cpu or GPU)
 
+        # This should be without gradients ...
         map_pred, _, y_32_pred = unet(image)
 
         y_32_pred = y_32_pred.squeeze(1)
