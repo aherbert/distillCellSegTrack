@@ -19,6 +19,8 @@ Displays an numpy array image using napari.
 import argparse
 import os
 
+# Duplicated from cp_distill.bin_utils so this script can 
+# be run without setting the PYTHONPATH
 def file_path(string):
     if os.path.isfile(string):
         return string

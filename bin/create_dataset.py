@@ -14,24 +14,7 @@
 
 import argparse
 import os
-
-def file_or_dir_path(string):
-    if os.path.isfile(string) or os.path.isdir(string):
-        return string
-    else:
-        raise FileNotFoundError(string)
-
-def file_path(string):
-    if os.path.isfile(string):
-        return string
-    else:
-        raise FileNotFoundError(string)
-
-def dir_path(string):
-    if os.path.isdir(string):
-        return string
-    else:
-        raise NotADirectoryError(string)
+from cp_distill.bin_utils import file_path, file_or_dir_path
 
 def run(args):
     import time

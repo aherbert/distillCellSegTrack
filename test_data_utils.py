@@ -15,24 +15,7 @@
 import argparse
 import os
 import psutil
-
-def file_or_dir_path(string):
-    if os.path.isfile(string) or os.path.isdir(string):
-        return string
-    else:
-        raise FileNotFoundError(string)
-
-def file_path(string):
-    if os.path.isfile(string):
-        return string
-    else:
-        raise FileNotFoundError(string)
-
-def dir_path(string):
-    if os.path.isdir(string):
-        return string
-    else:
-        raise NotADirectoryError(string)
+from cp_distill.bin_utils import file_path, dir_path, file_or_dir_path
 
 def run(args):
     from data_utils import get_training_and_validation_loaders

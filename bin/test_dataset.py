@@ -13,13 +13,7 @@
 # ------------------------------------------------------------------------------
 
 import argparse
-import os
-
-def dir_path(string):
-    if os.path.isdir(string):
-        return string
-    else:
-        raise NotADirectoryError(string)
+from cp_distill.bin_utils import dir_path
 
 def run(args):
     import logging
