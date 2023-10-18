@@ -80,9 +80,6 @@ def train_epoch(net, train_loader, validation_loader, loss_fn, optimiser, device
 
         y_pred, _, y32_pred = net(x)
         del x
-        # Q. Is this required ???
-        #y_pred = y_pred.squeeze(1)
-        #y32_pred = y32_pred.squeeze(1)
 
         loss = loss_fn(y, y32, y_pred, y32_pred)
         train_loss += loss.item()
@@ -112,9 +109,6 @@ def train_epoch(net, train_loader, validation_loader, loss_fn, optimiser, device
         with torch.no_grad():
             y_pred, _, y32_pred = net(x)
         del x
-        # Q. Is this required ???
-        #y_pred = y_pred.squeeze(1)
-        #y32_pred = y32_pred.squeeze(1)
 
         loss = loss_fn(y, y32, y_pred, y32_pred)
         val_loss += loss.item()
