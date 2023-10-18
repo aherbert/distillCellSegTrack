@@ -24,6 +24,9 @@ def dir_path(string):
 def run(args):
     import logging
     from cp_distill.datasets import find_images, CPDataset
+    if args.load:
+        import time
+        from torch.utils.data import DataLoader
 
     logging.basicConfig(
         format='[%(asctime)s] %(levelname)s - %(message)s',
@@ -49,6 +52,22 @@ def run(args):
                 logging.warning(f"Dataset: {d} : x and {name} tile size mismatch, %s vs %s",
                                 tile, data.shape[1:])
         logging.info(f"Dataset: {d} : tiles = {len(dataset)} : tile dimensions {tile}")
+        
+        # Try running through a batch loader
+        if args.load:
+            start_time = time.time()
+            loader = DataLoader(dataset, batch_size=args.batch_size)
+            for i, (x, y, y32) in enumerate(loader):
+                if i == 0:
+                    s1, s2, s3 = x.shape, y.shape, y32.shape
+                    logging.info("Data load shapes x=%s, y=%s, y32=%s [batch=0]",
+                                  s1, s2, s3)
+                else:
+                    if x.shape != s1 or y.shape != s2 or y32.shape != s3:
+                        logging.info("Data load shapes x=%s, y=%s, y32=%s [batch=%d]",
+                                      x.shape, y.shape, y32.shape, i)
+            t = time.time() - start_time
+            logging.info(f'Loaded dataset {d} (in {t:.5f} seconds)')
             
 
 if __name__ == '__main__':
@@ -61,6 +80,11 @@ if __name__ == '__main__':
     parser.add_argument('--log-level', dest='log_level', type=int,
         default=20,
         help='Log level (default: %(default)s). WARNING=30; INFO=20; DEBUG=10')
+    parser.add_argument('--load', dest='load', action='store_true',
+        help='Load the dataset')
+    parser.add_argument('--batch-size', dest='batch_size', type=int,
+        default=8,
+        help='Batch size for the data loader (default: %(default)s)')
 
     args = parser.parse_args()
     run(args)
