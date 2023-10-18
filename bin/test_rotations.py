@@ -67,7 +67,6 @@ def run(args):
         # diam mean is ignored in cellpose 2.0 as it is saved in the model
     ).to(device)
     net.load_model(os.path.abspath(args.model), device=device)
-    net.load_model(os.path.abspath(args.model), device=device)
     # Put in evaluation mode (train=False)
     net.eval()
     # Support CPU mode
