@@ -24,6 +24,7 @@ def run(args):
     import torch.nn.functional as F
     from cp_distill.cellpose_ext import CPnetX
     from cp_distill.rotations import cp_rotate90
+    from cellpose.core import check_mkl
     from torch.utils import mkldnn as mkldnn_utils
     from torchmetrics.classification import BinaryJaccardIndex
     if args.matching:
@@ -42,7 +43,8 @@ def run(args):
         images = [images]
 
     device = torch.device(args.device)
-    mkldnn = True if args.device == 'cpu' else None
+    gpu = device.type == 'cuda'
+    mkldnn = False if gpu else check_mkl(True)
 
     # Create Cellpose network
     net = CPnetX(
