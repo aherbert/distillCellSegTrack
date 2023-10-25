@@ -2,4 +2,6 @@ __pycache__
 test_data_*
 test_images
 timeit.py
-cp_model
+model.pt
+model.pt.best
+training.json
