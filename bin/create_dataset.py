@@ -24,6 +24,7 @@ def run(args):
     import glob
     import torch
     import shutil
+    import json
     from cp_distill.cellpose_ext import CellposeModelX
 
     # Debug memory usage
@@ -63,8 +64,8 @@ def run(args):
         os.makedirs(save_directory)
 
     # Save options to the directory
-    with open(os.path.join(save_directory, 'settings.txt'), 'w') as f:
-        print(args, file=f)
+    with open(os.path.join(save_directory, 'settings.json'), 'w') as f:
+        json.dump(vars(args), f)
 
     # Find input images
     combined_images = []
@@ -140,7 +141,7 @@ def run(args):
 
 if __name__ == '__main__':
     base = os.path.dirname(os.path.abspath(__file__));
-    cellpose_model = os.path.join(base, "..", "cellpose_models", "Nuclei_Hoechst")
+    cellpose_model = os.path.abspath(os.path.join(base, "..", "cellpose_models", "Nuclei_Hoechst"))
 
     parser = argparse.ArgumentParser(
         description='Program to convert input images ([C] x X x Y) to a dataset.' +
