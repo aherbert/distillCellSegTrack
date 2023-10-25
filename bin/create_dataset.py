@@ -95,7 +95,7 @@ def run(args):
 
     # Create Cellpose with option to save input/output
     segmentation_model = CellposeModelX(
-        model_type=os.path.abspath(args.model),
+        model_type=args.model,
         device=device,
         save_directory=save_directory
     )
@@ -141,7 +141,7 @@ def run(args):
 
 if __name__ == '__main__':
     base = os.path.dirname(os.path.abspath(__file__));
-    cellpose_model = os.path.abspath(os.path.join(base, "..", "cellpose_models", "Nuclei_Hoechst"))
+    cellpose_model = os.path.join(base, "..", "cellpose_models", "Nuclei_Hoechst")
 
     parser = argparse.ArgumentParser(
         description='Program to convert input images ([C] x X x Y) to a dataset.' +
@@ -179,4 +179,5 @@ if __name__ == '__main__':
         help='Batch size (default: %(default)s)')
 
     args = parser.parse_args()
+    args.model = os.path.abspath(args.model)
     run(args)
