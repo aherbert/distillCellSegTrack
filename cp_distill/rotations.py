@@ -52,7 +52,7 @@ def cp_rotate90(y, k: int=1):
         # map flows
         ry[[0, 1]] = ry[[1, 0]]
         ry[0] = -ry[0]
-        
+
     elif k == 2:
         # 180 degrees
         # map flows

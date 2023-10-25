@@ -46,7 +46,7 @@ def run(args):
                 logging.warning(f"Dataset: {d} : x and {name} tile size mismatch, %s vs %s",
                                 tile, data.shape[1:])
         logging.info(f"Dataset: {d} : tiles = {len(dataset)} : tile dimensions {tile}")
-        
+
         # Try running through a batch loader
         if args.load:
             start_time = time.time()
@@ -62,7 +62,7 @@ def run(args):
                                       x.shape, y.shape, y32.shape, i)
             t = time.time() - start_time
             logging.info(f'Loaded dataset {d} (in {t:.5f} seconds)')
-            
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(

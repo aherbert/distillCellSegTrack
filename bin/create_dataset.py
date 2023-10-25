@@ -48,7 +48,7 @@ def run(args):
             level=logging.INFO)
 
     start_time = time.time()
-    
+
     save_directory=f'{args.save_dir}_{os.path.basename(args.model)}'
     if os.path.isdir(save_directory):
         if not args.delete:
@@ -61,7 +61,7 @@ def run(args):
                 shutil.rmtree(os.path.join(root, d))
     else:
         os.makedirs(save_directory)
-        
+
     # Save options to the directory
     with open(os.path.join(save_directory, 'settings.txt'), 'w') as f:
         print(args, file=f)
@@ -124,7 +124,7 @@ def run(args):
         # Do rotations
         for k in args.rotations:
             logging.info(f'Processing rotation {k} on {i+1}: {image}')
- 
+
             # TODO: Should this be saved?
             start = segmentation_model._count
             masks_array, flows, styles = segmentation_model.eval(
@@ -143,7 +143,7 @@ if __name__ == '__main__':
     cellpose_model = os.path.join(base, "..", "cellpose_models", "Nuclei_Hoechst")
 
     parser = argparse.ArgumentParser(
-        description='Program to convert input images ([C] x X x Y) to a dataset.' + 
+        description='Program to convert input images ([C] x X x Y) to a dataset.' +
             ' Images are assumed to be normalised to [0, 1].')
 
     parser.add_argument('image', nargs='+', metavar='IMAGE',

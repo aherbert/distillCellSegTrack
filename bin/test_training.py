@@ -41,7 +41,7 @@ def run(args):
         level=args.log_level)
 
     start_time = time.time()
-    
+
     # Create Cellpose network
     device = torch.device(args.device)
     torch.manual_seed(args.seed)
@@ -77,7 +77,7 @@ def run(args):
 
     net = net.to(device)
 
-    # Create data    
+    # Create data
     images = find_images(args.directory)
     logging.info(f'Processing dataset: {args.directory} : tiles = {len(images)}')
     size = len(images)
@@ -87,10 +87,10 @@ def run(args):
     y, z = train_test_split(rng.choice(images, size, replace=False),
                             test_size=args.test_size, shuffle=False)
     logging.info(f'Size train {len(y)} : validation {len(z)}')
-    
+
     train_loader = DataLoader(CPDataset(y, args.directory), batch_size=args.batch_size)
     validation_loader = DataLoader(CPDataset(z, args.directory), batch_size=args.batch_size)
-    
+
     # Create training objects
     loss_fn = MapLoss(binary=False)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
@@ -115,7 +115,7 @@ def run(args):
             shutil.copy2(checkpoint_name, checkpoint_name + '.best')
         logging.info('[%d] Loss train %s : validation %s', epoch, train_loss, val_loss)
         scheduler.step()
-    
+
     t = time.time() - start_time
     logging.info(f'Done (in {t:.6g} seconds)')
 
@@ -181,11 +181,11 @@ if __name__ == '__main__':
         help='Log level (default: %(default)s). WARNING=30; INFO=20; DEBUG=10')
 
     args = parser.parse_args()
-    
+
     # Support save/continue of a training run
     import os
     import json
-    
+
     args_d = vars(args)
     if os.path.isfile(args.directory):
         # Continue training

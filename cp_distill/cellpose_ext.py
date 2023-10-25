@@ -77,23 +77,23 @@ class CellposeModelX(CellposeModel):
 
     gpu: bool (optional, default False)
         whether or not to save model to GPU, will check if GPU available
-        
+
     pretrained_model: str or list of strings (optional, default False)
         full path to pretrained cellpose model(s), if None or False, no model loaded
-        
+
     model_type: str (optional, default None)
-        any model that is available in the GUI, use name in GUI e.g. 'livecell' 
+        any model that is available in the GUI, use name in GUI e.g. 'livecell'
         (can be user-trained or model zoo)
-        
+
     net_avg: bool (optional, default False)
         loads the 4 built-in networks and averages them if True, loads one network if False
-        
+
     diam_mean: float (optional, default 30.)
-        mean 'diameter', 30. is built in value for 'cyto' model; 17. is built in value for 'nuclei' model; 
+        mean 'diameter', 30. is built in value for 'cyto' model; 17. is built in value for 'nuclei' model;
         if saved in custom model file (cellpose>=2.0) then it will be loaded automatically and overwrite this value
-        
+
     device: torch device (optional, default None)
-        device used for model running / training 
+        device used for model running / training
         (torch.device('cuda') or torch.device('cpu')), overrides gpu input,
         recommended if you want to use a specific GPU (e.g. torch.device('cuda:1'))
 
@@ -105,31 +105,31 @@ class CellposeModelX(CellposeModel):
         use skip connections from style vector to all upsampling layers
 
     concatenation: bool (optional, default False)
-        if True, concatentate downsampling block outputs with upsampling block inputs; 
-        default is to add 
-    
+        if True, concatentate downsampling block outputs with upsampling block inputs;
+        default is to add
+
     nchan: int (optional, default 2)
-        number of channels to use as input to network, default is 2 
+        number of channels to use as input to network, default is 2
         (cyto + nuclei) or (nuclei + zeros)
-    
+
     save_directory: str (optional, default None)
         directory to save input to and output from the network (images
         will be saved with a counter suffix)
     """
-    
-    def __init__(self, gpu=False, pretrained_model=False, 
+
+    def __init__(self, gpu=False, pretrained_model=False,
                     model_type=None, net_avg=False,
                     diam_mean=30., device=None,
                     residual_on=True, style_on=True, concatenation=False,
                     nchan=2,
                     save_directory=None):
         super(CellposeModelX, self).__init__(
-            gpu=gpu, pretrained_model=pretrained_model, 
+            gpu=gpu, pretrained_model=pretrained_model,
             model_type=model_type, net_avg=net_avg,
             diam_mean=diam_mean, device=device,
             residual_on=residual_on, style_on=style_on, concatenation=concatenation,
             nchan=nchan)
-        
+
         # Validate save directory
         if save_directory:
             if not os.path.isdir(save_directory):
@@ -140,16 +140,16 @@ class CellposeModelX(CellposeModel):
         # The network is created in cellpose.core.UnetModel.
         # Here we replace the network with our custom version.
         # Code adapted from cellpose/core.py:UnetModel.__init__
-        self.net = CPnetX(self.nbase, 
-                          self.nclasses, 
+        self.net = CPnetX(self.nbase,
+                          self.nclasses,
                           sz=3,
-                          residual_on=residual_on, 
+                          residual_on=residual_on,
                           style_on=style_on,
                           concatenation=concatenation,
                           mkldnn=self.mkldnn,
                           diam_mean=diam_mean).to(self.device)
 
-        # Reinitialise network        
+        # Reinitialise network
         # Code adapted from cellpose/models.py:CellposeModel.__init__
         # This duplication of loading a model roughly doubles construction time
         # from ~1.2s to 2.4s
@@ -173,7 +173,7 @@ class CellposeModelX(CellposeModel):
         del X
         y = self._from_device(y)
         style = self._from_device(style)
-       
+
         # Commented out. This appears to be legacy code that is not used
         # since conv is not defined.
         #if return_conv:
@@ -183,7 +183,7 @@ class CellposeModelX(CellposeModel):
         # Save input/output
         if self._save_directory:
             y32 = self._from_device(y32)
-            
+
             # save individual tiles
             # Tiles dimensions: ntiles x nchan x bsize x bsize
             # (bsize = size of tiles)
@@ -198,7 +198,7 @@ class CellposeModelX(CellposeModel):
                 np.save(os.path.join(self._save_directory, f'output_{self._count+i}.npy'), y[i])
                 np.save(os.path.join(self._save_directory, f'style_{self._count+i}.npy'), style[i])
                 np.save(os.path.join(self._save_directory, f'output32_{self._count+i}.npy'), y32[i])
-                
+
             self._count += n
-       
+
         return y, style

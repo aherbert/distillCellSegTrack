@@ -36,7 +36,7 @@ def run(args):
         level=args.log_level)
 
     start_time = time.time()
-    
+
     # Find input images
     images = args.image
     if np.isscalar(images):
@@ -100,7 +100,7 @@ def run(args):
             y, _, y32 = net(X)
         y = y.squeeze()
         y32 = y32.squeeze()
-        
+
         # Set up for Jaccard
         # Use only the probability map (ignore gradients)
         sy = F.sigmoid(y[2])
@@ -113,12 +113,12 @@ def run(args):
         iou = jaccard(p, p)
         logging.info('Rotation %3d loss : y32 mse %10.6g; flows mse %10.6g; p bce %10.6g; p IoU %10.6g',
                      0, loss_32, loss_flow, loss_p, iou)
-        
+
         if args.save_dir:
             name = os.path.splitext(os.path.basename(image))[0]
             np.save(os.path.join(args.save_dir, name + "_0_0"), _from_device(y))
             np.save(os.path.join(args.save_dir, name + "_0_32"), _from_device(y32))
-            
+
         # Test with rotations
         for k in range(1, 4):
             # rotate the original tensor
@@ -129,7 +129,7 @@ def run(args):
                 yy, _, yy32 = net(X)
             yy = yy.squeeze()
             yy32 = yy32.squeeze()
-            
+
             if args.save_dir:
                 a = yy
                 b = yy32
@@ -188,7 +188,7 @@ def run(args):
             # Binary cross entropy compare inputs to a target in [0, 1]
             # We could use p in {0, 1} but here use the sigmoid of y.
             loss_p = F.binary_cross_entropy_with_logits(yy[2], rsy) #p)
-            
+
             pp = F.sigmoid(yy[2])
             iou = jaccard(pp, rp)
             logging.info('Rotation %3d loss : y32 mse %10.6g; flows mse %10.6g; p bce %10.6g; p IoU %10.6g',
@@ -198,7 +198,7 @@ def run(args):
         del X
         del y
         del y32
-        
+
     if args.matching:
         for k in range(1, 4):
             for index, (n, name) in enumerate([(2, 'y'), (32, 'y32')]):
@@ -211,7 +211,7 @@ def run(args):
                     i, j = row[z], col[z]
                     logging.info(f'Rotation %3d : {name}[{i:2d}][{j:2d}] match=%8.3f',
                          k*90, cost[i][j])
-            
+
 
     t = time.time() - start_time
     logging.info(f'Done (in {t:.6g} seconds)')

@@ -25,7 +25,7 @@ def find_images(directory):
     the input tile name:
 
     input_N.npy: input tile
-    
+
     where N is the image number.
 
     Parameters
@@ -52,13 +52,13 @@ class CPDataset(Dataset):
     """
     Dynamically load images from a directory. Images are input
     and output tiles from the Cellpose network:
-    
+
     input_N.npy: input tile (2 x Y x X) [target, nuclei]
     output_N.npy: output tile (3 x Y x X) [horizontal flow, vertical flow, map]
     output32_N.npy: output tile (32 x Y x X) [penultimate Cellpose upsample layer]
 
     where N is the image number.
-    
+
     Note: The input tiles are padded with a zero array if they are greyscale
     images to create a 2 channel input.
 
@@ -66,7 +66,7 @@ class CPDataset(Dataset):
     -------------------
 
     images: list of image numbers
-        Image numbers 
+        Image numbers
 
     image_directory: str
         Image directory

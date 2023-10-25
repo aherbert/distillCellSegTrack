@@ -54,7 +54,7 @@ def train_epoch(net, train_loader, validation_loader, loss_fn, optimiser, device
     validation_loader : DataLoader
         Loader for the validation data.
     loss_fn : torch.nn.Module
-        Loss function. This must have the following signature for the 
+        Loss function. This must have the following signature for the
         forward method: (y, y32, y_pred, y32_pred) -> loss.
     optimiser : torch.optim.Optimizer
         Optimiser. Used to perform a step for each batch in the training data.

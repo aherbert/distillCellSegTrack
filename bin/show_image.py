@@ -19,7 +19,7 @@ Displays an numpy array image using napari.
 import argparse
 import os
 
-# Duplicated from cp_distill.bin_utils so this script can 
+# Duplicated from cp_distill.bin_utils so this script can
 # be run without setting the PYTHONPATH
 def file_path(string):
     if os.path.isfile(string):
@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(
         description='Program to show the numpy array image using napari.')
-    
+
     parser.add_argument('image', metavar='IMAGE',
         type=file_path,
         help='image')
