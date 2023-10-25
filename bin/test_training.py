@@ -13,13 +13,23 @@
 # ------------------------------------------------------------------------------
 
 import argparse
-from cp_distill.bin_utils import dir_path
+from cp_distill.bin_utils import file_or_dir_path
+from enum import Enum
+
+class Existing(str, Enum):
+    overwrite = 'overwrite'
+    load = 'load'
+    error = 'error'
+    def __str__(self):
+        return self.value
 
 def run(args):
+    import os
     import time
     import logging
     import numpy as np
     import torch
+    import shutil
     from torch.utils.data import DataLoader
     from cp_distill.datasets import find_images, CPDataset
     from cp_distill.cellpose_ext import CPnetX
@@ -41,7 +51,31 @@ def run(args):
         concatenation=args.concatenation,
         # cannot train with mkldnn
         mkldnn=False,
-    ).to(device)
+    )
+
+    # Create optimizer
+    epoch = 0
+    optimizer = torch.optim.Adam(net.parameters(), lr=0.01)
+    best_loss = 1e300
+
+    # Use existing checkpoint
+    checkpoint_name = args.name
+    if os.path.isfile(checkpoint_name):
+        if args.existing == Existing.error:
+            logging.error(f'Checkpoint exists: {checkpoint_name}')
+            exit(1)
+        if args.existing == Existing.load:
+            checkpoint = torch.load(checkpoint_name)
+            net.load_state_dict(checkpoint['model_state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            epoch = checkpoint['epoch']
+            best_loss = checkpoint['best_loss']
+            net.train()
+            logging.info(f'Loaded checkpoint: {checkpoint_name}')
+        if args.existing == Existing.overwrite:
+            logging.info(f'Existing checkpoint will be overwritten: {checkpoint_name}')
+
+    net = net.to(device)
 
     # Create data    
     images = find_images(args.directory)
@@ -59,18 +93,27 @@ def run(args):
     
     # Create training objects
     loss_fn = MapLoss(binary=False)
-    optimiser = torch.optim.Adam(net.parameters(), lr=0.01)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimiser, step_size=20, gamma=0.1)
-    
-    best_loss = 1e300
-    for epoch in range(args.epochs):
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
+
+    for i in range(args.epochs):
+        epoch += 1
         train_loss, val_loss = \
-            train_epoch(net, train_loader, validation_loader, loss_fn, optimiser, 
-                       device)
+            train_epoch(net, train_loader, validation_loader, loss_fn,
+                        optimizer, device)
+        better = False
         if val_loss < best_loss:
             best_loss = val_loss
-            torch.save(net.state_dict(), args.name)
-        logging.info('[%d] Loss train %s : validation %s', epoch+1, train_loss, val_loss)
+            better = True
+        torch.save({
+            'epoch': epoch,
+            'model_state_dict': net.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'loss': val_loss,
+            'best_loss': best_loss,
+            }, checkpoint_name)
+        if better:
+            shutil.copy2(checkpoint_name, checkpoint_name + '.best')
+        logging.info('[%d] Loss train %s : validation %s', epoch, train_loss, val_loss)
         scheduler.step()
     
     t = time.time() - start_time
@@ -82,8 +125,8 @@ if __name__ == '__main__':
       description='Program to test training a model using a Cellpose tile dataset.')
 
     parser.add_argument('directory', metavar='DIR',
-        type=dir_path,
-        help='Dataset directory')
+        type=file_or_dir_path,
+        help='Dataset directory, or training state file')
     parser.add_argument('--size', dest='size', type=int,
         default=0,
         help='Number of tiles to use (default is all tiles)')
@@ -93,11 +136,17 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--device', dest='device',
         default='cuda',
         help='Device (default: %(default)s)')
+    parser.add_argument('-s', '--state', dest='state', type=str,
+        default='training.json',
+        help='Training state file (default: %(default)s)')
 
     group = parser.add_argument_group('Model')
     group.add_argument('-n', '--name', dest='name', type=str,
-        default='cp_model',
-        help='Model name (default: %(default)s)')
+        default='model.pt',
+        help='Checkpoint name (default: %(default)s)')
+    group.add_argument('--existing', dest='existing', type=Existing,
+        choices=list(Existing), default=Existing.error,
+        help='Existing checkpoint option (default: %(default)s)')
     group.add_argument('--nbase', nargs='+', dest='nbase', type=int,
         default=[2, 32],
         help='Cellpose architecture (default: %(default)s). ' +
@@ -120,7 +169,7 @@ if __name__ == '__main__':
         default=8,
         help='Batch size for the data loader (default: %(default)s)')
     group.add_argument('--seed', dest='seed', type=int,
-        default=42,
+        default=0xdeadbeef,
         help='Random seed for initial model (default: %(default)s)')
     group.add_argument('--test-size', dest='test_size', type=float,
         default=0.25,
@@ -132,4 +181,32 @@ if __name__ == '__main__':
         help='Log level (default: %(default)s). WARNING=30; INFO=20; DEBUG=10')
 
     args = parser.parse_args()
+    
+    # Support save/continue of a training run
+    import os
+    import json
+    
+    args_d = vars(args)
+    if os.path.isfile(args.directory):
+        # Continue training
+        with open(args.directory) as f:
+            d = json.load(f)
+            # To continue training we must load the existing checkpoint.
+            # This avoids have to convert the 'existing' str to an enum.
+            d['existing'] = Existing.load
+        # Merge with script arguments.
+        # Allow some arguments to override the previous training state.
+        import sys
+        saved = {}
+        for s in ['log-level', 'epochs']:
+           if '--' + s in sys.argv:
+                s = s.replace('-', '_')
+                saved[s] = args_d[s]
+        args_d.update(d)
+        args_d.update(saved)
+    else:
+        # Save training state
+        with open(args.state, 'w') as f:
+            json.dump(args_d, f)
+
     run(args)
