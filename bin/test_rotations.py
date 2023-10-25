@@ -218,7 +218,7 @@ def run(args):
 
 if __name__ == '__main__':
     base = os.path.dirname(os.path.abspath(__file__));
-    cellpose_model = os.path.join(base, "..", "cellpose_models", "Nuclei_Hoechst")
+    cellpose_model = os.path.abspath(os.path.join(base, "..", "cellpose_models", "Nuclei_Hoechst"))
 
     parser = argparse.ArgumentParser(
       description='Program to test Cellpose using a rotated tile.')
