@@ -131,6 +131,7 @@ class CellposeModelX(CellposeModel):
             nchan=nchan)
 
         # Validate save directory
+        self._save_directory = None
         if save_directory:
             if not os.path.isdir(save_directory):
                 raise NotADirectoryError(save_directory)
