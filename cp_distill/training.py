@@ -72,8 +72,10 @@ def train_epoch(net, train_loader, validation_loader, loss_fn, optimiser, device
     # Training
     net.train()
     train_loss = 0
+    n = 0
     for x, y, y32 in train_loader:
 
+        n += len(x)
         if device is not None:
             # sending the data to the device (cpu or GPU)
             x, y, y32 = x.to(device), y.to(device), y32.to(device)
@@ -95,13 +97,15 @@ def train_epoch(net, train_loader, validation_loader, loss_fn, optimiser, device
         del y32_pred
         torch.cuda.empty_cache()
 
-    train_loss /= len(train_loader)
+    train_loss /= n
 
     # Validation
     net.eval()
     val_loss = 0
+    n = 0
     for x, y, y32 in validation_loader:
 
+        n += len(x)
         if device is not None:
             # sending the data to the device (cpu or GPU)
             x, y, y32 = x.to(device), y.to(device), y32.to(device)
@@ -119,7 +123,7 @@ def train_epoch(net, train_loader, validation_loader, loss_fn, optimiser, device
         del y32_pred
         torch.cuda.empty_cache()
 
-    val_loss /= len(validation_loader)
+    val_loss /= n
 
     torch.cuda.empty_cache()
 
