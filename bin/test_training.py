@@ -146,7 +146,10 @@ def run(args):
     validation_loader = DataLoader(CPDataset(z, args.directory), batch_size=args.batch_size)
 
     # Create training objects
-    loss_fn = MapLoss(binary=False)
+    loss_fn = MapLoss(binary=True)
+    # Worse if the target is not binary
+    #loss_fn = MapLoss(binary=False)
+    # Much worse to ignore the flows
     #loss_fn = MapLoss(binary=False, channels=[2])
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
     # Training loss is expected to go down. Stop when at an approximate plateau.
