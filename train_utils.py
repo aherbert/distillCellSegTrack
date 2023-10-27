@@ -19,6 +19,8 @@ class KD_loss(torch.nn.Module):
 
         # This is assuming X x Y x Ch
         # Q. Why multiply by 5?
+        # A. This may be to make the gradients larger. This will penalise
+        # missing the peak of the gradient (highest magnitude).
         # Q. Why divide by 80 at the end?
         veci = 5. * y_3_true[:,:2]
         flow_loss = F.mse_loss(y_3_pred[:,:2], veci, reduction='mean')
