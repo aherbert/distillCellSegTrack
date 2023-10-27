@@ -147,6 +147,7 @@ def run(args):
 
     # Create training objects
     loss_fn = MapLoss(binary=False)
+    #loss_fn = MapLoss(binary=False, channels=[2])
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
     # Training loss is expected to go down. Stop when at an approximate plateau.
     train_stop = StoppingCriteria(patience=1, min_rel_delta=1e-2)

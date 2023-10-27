@@ -15,7 +15,7 @@ import torch
 import torch.nn.functional as F
 
 class MapLoss(torch.nn.Module):
-    def __init__(self, binary=False):
+    def __init__(self, binary=False, channels=None):
         """
         Create a loss function using the Cellpose map output.
         Uses binary cross entropy with logits. The target y can be
@@ -26,6 +26,8 @@ class MapLoss(torch.nn.Module):
         ----------
         binary : boolean (optional, default False)
             Convert the [0, 1] sigmoid to binary.
+        channels : int array (optional, default None)
+            Channels to target in y.
 
         Returns
         -------
@@ -33,13 +35,22 @@ class MapLoss(torch.nn.Module):
         """
         super(MapLoss, self).__init__()
         self._binary = binary
+        self._channels = None
+        if channels:
+            # Support only 3 channels in y
+            self._channels = list(set(channels).intersection([0,1,2]))
 
     def forward(self, y, y32, y_pred, y32_pred):
-        # y is N x Ch x Y x X; extract channel 2
-        s = F.sigmoid(y[:,2])
+        # y is N x Ch x Y x X
+        if self._channels:
+            s = F.sigmoid(y[:,self._channels])
+            if self._binary:
+                s = torch.where(s > 0.5, 1.0, 0.0)
+            return F.binary_cross_entropy_with_logits(y_pred[:,self._channels], s, reduction='mean')
+        s = F.sigmoid(y)
         if self._binary:
             s = torch.where(s > 0.5, 1.0, 0.0)
-        return F.binary_cross_entropy_with_logits(y_pred[:,2], s, reduction='mean')
+        return F.binary_cross_entropy_with_logits(y_pred, s, reduction='mean')
 
 def train_epoch(net, train_loader, validation_loader, loss_fn, optimiser, device):
     """
