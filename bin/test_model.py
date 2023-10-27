@@ -22,7 +22,7 @@ def run(args):
     import numpy as np
     import glob
     import torch
-    from cellpose.models import CellposeModel
+    # Always use the CellposeModelX to allow saving tiles
     from cp_distill.cellpose_ext import CellposeModelX, CPnetX
     from cp_distill.image_utils import filter_segmentation
     from sklearn.metrics import jaccard_score
@@ -56,8 +56,16 @@ def run(args):
 
     start_time = time.time()
 
-    if args.save_dir and not os.path.isdir(args.save_dir):
-        os.makedirs(args.save_dir)
+    # Allow the CPnetX IO to be saved to a directory.
+    tile_dir = None
+    tile_dir2 = None
+    if args.save_dir:
+        os.makedirs(args.save_dir, exist_ok=True)
+        if args.save_tiles:
+            tile_dir = os.path.join(args.save_dir, 'cp')
+            tile_dir2 = os.path.join(args.save_dir, 'st')
+            os.makedirs(tile_dir, exist_ok=True)
+            os.makedirs(tile_dir2, exist_ok=True)
 
     # Find input images
     combined_images = []
@@ -92,12 +100,13 @@ def run(args):
 
     # Create Cellpose
     cellpose_model = state['model']
-    model = CellposeModel(
+    model = CellposeModelX(
         model_type=cellpose_model,
         # Not used in create_dataset.py
         #residual_on=state['residual_on'], style_on=state['style_on'],
         #concatenation=state['concatenation'],
-        device=device
+        device=device,
+        save_directory=tile_dir
     )
     
     # Create a modified Cellpose using the student model
@@ -106,7 +115,8 @@ def run(args):
         # Not used in create_dataset.py
         #residual_on=state['residual_on'], style_on=state['style_on'],
         #concatenation=state['concatenation'],
-        device=device
+        device=device,
+        save_directory=tile_dir2
     )
     net = CPnetX(
         nbase=state['nbase'], nout=3, sz=3,
@@ -177,6 +187,11 @@ def run(args):
         match_iou = iou(m1.ravel(), m2.ravel())
         logging.info(f'IoU {jac}, Match IoU {match_iou}')
 
+        # if tile_dir:
+        # TODO:
+        # This script could compute the loss function on each batch for the
+        # network outputs, and other metrics (see test_rotations.py)
+
     t = time.time() - start_time
     logging.info(f'Done (in {t} seconds)')
 
@@ -203,6 +218,8 @@ if __name__ == '__main__':
         help='Device (default: %(default)s)')
     parser.add_argument('-s', '--save', dest='save_dir', type=str,
         help='Save directory')
+    parser.add_argument('--save-tiles', dest='save_tiles', action='store_true',
+        help='Save network input/output tiles')
     parser.add_argument('--batch-size', dest='batch_size', type=int,
         default=8,
         help='Batch size (default: %(default)s)')
