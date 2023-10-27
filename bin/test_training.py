@@ -23,6 +23,60 @@ class Existing(str, Enum):
     def __str__(self):
         return self.value
 
+class StoppingCriteria:
+    def __init__(self, patience=3, min_delta=0.0, min_rel_delta=1e-4):
+        """
+        Create an instance.
+
+        Parameters
+        ----------
+        patience : int, optional
+            Number of times to allow for no improvement before stopping the execution.
+            The default is 3.
+        min_delta : float, optional
+            The minimum absolute change to be counted as improvement.
+            The default is 0.0.
+        min_rel_delta : float, optional
+            The minimum relative change to be counted as improvement.
+            The default is 1e-4.
+
+        Returns
+        -------
+        None.
+        """
+        self.patience = patience
+        self.min_delta = min_delta
+        self.min_rel_delta = min_rel_delta
+        self.counter = 0
+        self.min_value = 1e300
+
+    def check(self, value):
+        """
+        Test if the value has converged.
+
+        Parameters
+        ----------
+        value : float
+            Value.
+
+        Returns
+        -------
+        bool
+            If the value has converged.
+        """
+        obs = value + self.min_delta + self.min_rel_delta * self.min_value
+        target = self.min_value
+        if (obs < target):
+            # Improvement
+            self.min_value = value
+            self.counter = 0
+        else:
+            # No improvement. Check how many times this has happened.
+            self.counter += 1
+            if self.counter >= self.patience:
+                return True
+        return False
+
 def run(args):
     import os
     import time
@@ -94,6 +148,12 @@ def run(args):
     # Create training objects
     loss_fn = MapLoss(binary=False)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
+    # Training loss is expected to go down. Stop when at an approximate plateau.
+    train_stop = StoppingCriteria(patience=1, min_rel_delta=1e-2)
+    # Validation loss may increase due to overtraining. This is the main
+    # control point over early termination.
+    val_stop = StoppingCriteria(patience=args.patience, min_delta=args.delta,
+       min_rel_delta=args.rel_delta)
 
     for i in range(args.epochs):
         epoch += 1
@@ -114,8 +174,11 @@ def run(args):
         if better:
             shutil.copy2(checkpoint_name, checkpoint_name + '.best')
         logging.info('[%d] Loss train %s : validation %s', epoch, train_loss, val_loss)
+        if train_stop.check(train_loss) and val_stop.check(val_loss):
+            logging.info('[%d] Stopping due to no improvement', epoch)
+            break
         scheduler.step()
-
+        
     t = time.time() - start_time
     logging.info(f'Done (in {t:.6g} seconds)')
 
@@ -174,6 +237,15 @@ if __name__ == '__main__':
     group.add_argument('--test-size', dest='test_size', type=float,
         default=0.25,
         help='Size for the test data (default: %(default)s)')
+    group.add_argument('--patience', dest='patience', type=int,
+        default=3,
+        help='Number of times to allow for no improvement before stopping (default: %(default)s)')
+    group.add_argument('--delta', dest='delta', type=float,
+        default=0,
+        help='The minimum absolute change to be counted as improvement (default: %(default)s)')
+    group.add_argument('--rel-delta', dest='rel_delta', type=float,
+        default=1e-4,
+        help='The minimum relative change to be counted as improvement (default: %(default)s)')
 
     group = parser.add_argument_group('Misc')
     group.add_argument('--log-level', dest='log_level', type=int,
