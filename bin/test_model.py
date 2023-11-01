@@ -22,6 +22,7 @@ def run(args):
     import numpy as np
     import glob
     import torch
+    import warnings
     # Always use the CellposeModelX to allow saving tiles
     from cp_distill.cellpose_ext import CellposeModelX, CPnetX
     from cp_distill.image_utils import filter_segmentation
@@ -172,8 +173,12 @@ def run(args):
         # object in the true mask against the best assignement of the predicted
         # mask. The IoUs are summarised in the aggregated_jaccard_index and
         # average_precision metrics.
-        aji = aggregated_jaccard_index(masks_true, masks_pred)
-        ap, tp, fp, fn = average_precision(masks_true, masks_pred, threshold=threshold)
+        # Catch warning due to 0 / 0 when there is no mask overlap.
+        # Cellpose metrics will reset NaN values to zero.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            aji = aggregated_jaccard_index(masks_true, masks_pred)
+            ap, tp, fp, fn = average_precision(masks_true, masks_pred, threshold=threshold)
         logging.info(f'IoU {jac}, Match IoU {aji}')
         logging.info(f'Precision at {threshold}: {ap[0]}, TP {tp[0]}, FP {fp[0]}, FN {fn[0]}')
 
