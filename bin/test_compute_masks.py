@@ -21,7 +21,8 @@ def run(args):
     import logging
     import numpy as np
     import torch
-    from cellpose.dynamics import compute_masks
+    from cellpose.dynamics import compute_masks, masks_to_flows
+    from scipy.ndimage import mean
 
     logging.basicConfig(
         format='[%(asctime)s] %(levelname)s - %(message)s',
@@ -45,17 +46,35 @@ def run(args):
         if img.ndim != 3:
             raise Exception('{image} requires 3 channels')
 
+        dP, cellprob = img[:2], img[2]
+
         # Run Cellpose mask creation
-        m, p = compute_masks(img[:2], img[2], use_gpu=use_gpu, device=device,
+        maski, p = compute_masks(dP, cellprob, use_gpu=use_gpu, device=device,
             niter=args.niter, cellprob_threshold=args.cellprob_threshold,
             flow_threshold=args.flow_threshold, interp=args.interp,
             min_size=args.min_size)
+
+        # Compute flows from the mask and get the error
+        # Adpated from cellpose.metrics.flow_error
+        # Note: The maximum flow is -1 to 1.
+        dP_masks = masks_to_flows(maski, use_gpu=use_gpu, device=device)
+        flow_errors = np.zeros(maski.max())
+        for i in range(dP_masks.shape[0]):
+            # Note: Network flows are 5x higher than the flows from the mask
+            flow_errors += mean((dP_masks[i] - dP[i]/5.)**2, maski,
+                                index=np.arange(1, maski.max()+1))
+        logging.debug('Flow error: %s', flow_errors)
+        logging.info('Objects=%d; Flow error: min=%.5f, max=%.5f, mean=%.5f, std=%.5f',
+            len(flow_errors), np.min(flow_errors), np.max(flow_errors),
+            np.mean(flow_errors), np.std(flow_errors))
 
         if args.save:
             # Save mask
             name = os.path.splitext(image)[0] + '.mask.npy'
             logging.info(f'Saving mask {i+1}: {name}')
-            np.save(name, m)
+            np.save(name, maski)
+            name = os.path.splitext(image)[0] + '.flows.npy'
+            np.save(name, dP_masks)
 
     t = time.time() - start_time
     logging.info(f'Done (in {t} seconds)')
