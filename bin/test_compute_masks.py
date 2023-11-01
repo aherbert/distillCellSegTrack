@@ -100,7 +100,8 @@ if __name__ == '__main__':
         help='Cell probability threshold (for the probability map)')
     parser.add_argument('--flow-threshold', dest='flow_threshold', type=float,
         default=0.4,
-        help='Flow threshold (for the match between predicted flows and mask flows)')
+        help='Flow threshold (for the match between predicted flows and mask flows).' +
+        ' Use 0.0 to output the maximum number of mask objects.')
     parser.add_argument('--interp', type=bool, default=True,
         help='Interpolate flows')
     parser.add_argument('--min-size', dest='min_size', type=int,
