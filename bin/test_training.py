@@ -108,8 +108,14 @@ def run(args):
     )
 
     # Create optimizer
+    # Note: Cellpose uses:
+    # optim.RAdam(self.net.parameters(), lr=learning_rate, betas=(0.95, 0.999),
+    #                                    eps=1e-08, weight_decay=weight_decay)
+    # This changes the beta from the default of (0.9, 0.999)
+    # UnetModel._train_net has a default learning_rate=0.2
     epoch = 0
-    optimizer = torch.optim.Adam(net.parameters(), lr=0.01)
+    optimizer = torch.optim.Adam(net.parameters(), lr=args.learning_rate,
+        betas=(0.95, 0.999))
     best_loss = 1e300
 
     # Use existing checkpoint
@@ -243,6 +249,9 @@ if __name__ == '__main__':
     group.add_argument('--test-size', dest='test_size', type=float,
         default=0.25,
         help='Size for the test data (default: %(default)s)')
+    group.add_argument('--lr', dest='learning_rate', type=float,
+        default=0.01,
+        help='The learning rate (default: %(default)s)')
     group.add_argument('--patience', dest='patience', type=int,
         default=3,
         help='Number of times to allow for no improvement before stopping (default: %(default)s)')
