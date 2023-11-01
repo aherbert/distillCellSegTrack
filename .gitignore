@@ -5,3 +5,4 @@ timeit.py
 model.pt
 model.pt.best
 training.json
+tmp
