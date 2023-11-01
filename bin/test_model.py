@@ -15,7 +15,7 @@
 import argparse
 import os
 from cp_distill.bin_utils import file_path, file_or_dir_path
-   
+
 def run(args):
     import time
     import logging
@@ -25,31 +25,9 @@ def run(args):
     # Always use the CellposeModelX to allow saving tiles
     from cp_distill.cellpose_ext import CellposeModelX, CPnetX
     from cp_distill.image_utils import filter_segmentation
+    from cellpose.metrics import aggregated_jaccard_index, average_precision
     from sklearn.metrics import jaccard_score
-    from scipy.optimize import linear_sum_assignment
 
-    def iou(x, y):
-        # Computes the IoU for the maximum matching between two masks.
-        # Create an all-vs-all intersection between prediction and target.
-        # i.e. count how many pixels from each object in x overlap each
-        # object in y.
-        n = np.max(y)
-        m = np.max(x)
-        if n + m <= 0:
-            return 0
-        count = np.zeros((m, n))
-        for i in range(len(x)):
-            if x[i] and y[i]:
-                count[x[i]-1][y[i]-1] += 1
-        # Find the maximum matching.
-        top = np.max(count)
-        cost = (top - count) / top
-        row, col = linear_sum_assignment(cost)
-        # Compute the IoU.
-        intersect = count[row, col].sum()
-        union = np.sum(x + y > 0)
-        return intersect / union
-    
     logging.basicConfig(
         format='[%(asctime)s] %(levelname)s - %(message)s',
         level=logging.INFO)
@@ -108,7 +86,7 @@ def run(args):
         device=device,
         save_directory=tile_dir
     )
-    
+
     # Create a modified Cellpose using the student model
     model2 = CellposeModelX(
         model_type=cellpose_model,
@@ -133,7 +111,9 @@ def run(args):
     # stored in the CellposeModel as the styles output array is smaller.
     model2.net = net
     model2.nbase = net.nbase
-    
+
+    threshold = args.threshold
+
     # Run Cellpose
     for i, image in enumerate(combined_images):
         logging.info(f'Processing image {i+1}: {image}')
@@ -162,7 +142,7 @@ def run(args):
             diameter=diameter, normalize=False
         )
         m1 = filter_segmentation(masks_array)
-        
+
         # Run student model
         masks_array, flows, styles = model2.eval(
             img,
@@ -173,7 +153,7 @@ def run(args):
             model_loaded=True
         )
         m2 = filter_segmentation(masks_array)
-        
+
         if args.save_dir:
             # Save masks
             name = os.path.splitext(os.path.basename(image))[0]
@@ -182,10 +162,20 @@ def run(args):
 
         # Score masks
         # Note: Masks are 2D arrays given the single image input.
-        jac = jaccard_score(np.where(m2 > 0, 1, 0).ravel(), 
+        jac = jaccard_score(np.where(m2 > 0, 1, 0).ravel(),
                             np.where(m1 > 0, 1, 0).ravel())
-        match_iou = iou(m1.ravel(), m2.ravel())
-        logging.info(f'IoU {jac}, Match IoU {match_iou}')
+
+        # Cellpose metrics
+        masks_true = [m1]
+        masks_pred = [m2]
+        # We do not report mask_ious(m1, m2); this reports the IoU for each
+        # object in the true mask against the best assignement of the predicted
+        # mask. The IoUs are summarised in the aggregated_jaccard_index and
+        # average_precision metrics.
+        aji = aggregated_jaccard_index(masks_true, masks_pred)
+        ap, tp, fp, fn = average_precision(masks_true, masks_pred, threshold=threshold)
+        logging.info(f'IoU {jac}, Match IoU {aji}')
+        logging.info(f'Precision at {threshold}: {ap[0]}, TP {tp[0]}, FP {fp[0]}, FN {fn[0]}')
 
         # if tile_dir:
         # TODO:
@@ -223,6 +213,9 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size', dest='batch_size', type=int,
         default=8,
         help='Batch size (default: %(default)s)')
+    parser.add_argument('--threshold', nargs='+', type=float,
+        default=[0.5, 0.75, 0.9],
+        help='Threshold for true positive match (default: %(default)s)')
 
     args = parser.parse_args()
     run(args)
