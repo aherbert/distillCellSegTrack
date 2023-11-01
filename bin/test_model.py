@@ -136,15 +136,18 @@ def run(args):
                 raise Exception('{image} requires 1 channel')
 
         # Run Cellpose
+        t1 = time.time()
         masks_array, flows, styles = model.eval(
             img,
             channels=channels,
             batch_size=args.batch_size,
             diameter=diameter, normalize=False
         )
+        t1 = time.time() - t1
         m1 = filter_segmentation(masks_array)
 
         # Run student model
+        t2 = time.time()
         masks_array, flows, styles = model2.eval(
             img,
             channels=channels,
@@ -153,7 +156,9 @@ def run(args):
             # This is required to avoid loading the original model again
             model_loaded=True
         )
+        t2 = time.time() - t2
         m2 = filter_segmentation(masks_array)
+        logging.info(f'Time Cellpose {t1:.6f}, Student {t2:.6f} ({t2/t1:.6f})')
 
         if args.save_dir:
             # Save masks
