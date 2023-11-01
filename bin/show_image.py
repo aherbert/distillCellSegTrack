@@ -31,19 +31,24 @@ def run(args):
     import napari
     import numpy as np
 
-    image = np.load(args.image)
-    axis = None if image.ndim == 2 else 0
+    images = args.image
+    if np.isscalar(images):
+        images = [images]
+
     viewer = napari.Viewer()
-    viewer.add_image(image, name=os.path.basename(args.image),
-                     channel_axis=axis, blending='additive')
+    for f in images:
+        image = np.load(f)
+        axis = None if image.ndim == 2 else 0
+        viewer.add_image(image, name=os.path.basename(f),
+                         channel_axis=axis, blending='additive')
     napari.run()
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(
-        description='Program to show the numpy array image using napari.')
+        description='Program to show the numpy array image[s] using napari.')
 
-    parser.add_argument('image', metavar='IMAGE',
+    parser.add_argument('image', nargs='+', metavar='IMAGE',
         type=file_path,
         help='image')
 
