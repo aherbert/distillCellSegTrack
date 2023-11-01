@@ -87,7 +87,7 @@ def run(args):
     from torch.utils.data import DataLoader
     from cp_distill.datasets import find_images, CPDataset
     from cp_distill.cellpose_ext import CPnetX
-    from cp_distill.training import MapLoss, train_epoch
+    from cp_distill.training import CellposeLoss, train_epoch
     from sklearn.model_selection import train_test_split
 
     logging.basicConfig(
@@ -146,7 +146,9 @@ def run(args):
     validation_loader = DataLoader(CPDataset(z, args.directory), batch_size=args.batch_size)
 
     # Create training objects
-    loss_fn = MapLoss(binary=True)
+    loss_fn = CellposeLoss()
+    # Worse using BCE on the flows. They must have the same magnitude.
+    #loss_fn = MapLoss(binary=True)
     # Worse if the target is not binary
     #loss_fn = MapLoss(binary=False)
     # Much worse to ignore the flows

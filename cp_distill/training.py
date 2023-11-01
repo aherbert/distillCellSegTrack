@@ -13,6 +13,7 @@
 
 import torch
 import torch.nn.functional as F
+from torch import nn
 
 class MapLoss(torch.nn.Module):
     def __init__(self, binary=True, channels=None):
@@ -50,12 +51,39 @@ class MapLoss(torch.nn.Module):
             else:
                 s = F.sigmoid(y[:,self._channels])
             return F.binary_cross_entropy_with_logits(y_pred[:,self._channels], s, reduction='mean')
-        
+
         if self._binary:
             s = torch.where(y > 0, 1.0, 0.0)
         else:
             s = F.sigmoid(y)
         return F.binary_cross_entropy_with_logits(y_pred, s, reduction='mean')
+
+class CellposeLoss(torch.nn.Module):
+    def __init__(self):
+        """
+        Create a loss function using the Cellpose map/flow output.
+        Uses binary cross entropy with logits for the map.
+        Uses mse_loss for the flows.
+
+        Returns
+        -------
+        An instance.
+        """
+        super(CellposeLoss, self).__init__()
+        # Based on cellpose.core.UnetModel._set_criterion
+        self.criterion  = nn.MSELoss(reduction='mean')
+        self.criterion2 = nn.BCEWithLogitsLoss(reduction='mean')
+
+    def forward(self, y, y32, y_pred, y32_pred):
+        # Based on cellpose.models.CellposeModel.loss_fn
+        # y is N x Ch x Y x X
+        veci = y[:,:2]
+        lbl = torch.where(y[:,2] > 0, 1.0, 0.0)
+        loss = self.criterion(y_pred[:,:2], veci)
+        loss /= 2.
+        loss2 = self.criterion2(y_pred[:,2], lbl)
+        loss = loss + loss2
+        return loss
 
 def train_epoch(net, train_loader, validation_loader, loss_fn, optimiser, device):
     """
