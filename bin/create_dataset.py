@@ -160,6 +160,8 @@ def run(args):
                 y = y.transpose((1,2,0))
                 y = resize_image(y, rsz=segmentation_model.last_rescale)
                 y = y.transpose((2,0,1))
+                # Mask interpolation will create non-binary pixels
+                y[2] = np.where(y[2] > 0.5, 1.0, 0.0)
             y, *_ = pad_image_ND(y)
             tiles, *_ = make_tiles(y)
             ny, nx, nchan, ly, lx = tiles.shape
