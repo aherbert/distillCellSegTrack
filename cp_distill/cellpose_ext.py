@@ -203,3 +203,20 @@ class CellposeModelX(CellposeModel):
             self._count += n
 
         return y, style
+
+    def _run_cp(self, x, compute_masks=True, normalize=True, invert=False,
+                rescale=1.0, net_avg=False, resample=True,
+                augment=False, tile=True, tile_overlap=0.1,
+                cellprob_threshold=0.0,
+                flow_threshold=0.4, min_size=15,
+                interp=True, anisotropy=1.0, do_3D=False, stitch_threshold=0.0,
+                ):
+        masks, styles, dP, cellprob, p = super(CellposeModelX, self)._run_cp(x,
+            compute_masks, normalize, invert,
+            rescale, net_avg, resample,
+            augment, tile, tile_overlap,
+            cellprob_threshold,
+            flow_threshold, min_size,
+            interp, anisotropy, do_3D, stitch_threshold);
+        self.last_rescale = rescale
+        return masks, styles, dP, cellprob, p

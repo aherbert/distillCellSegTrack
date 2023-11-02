@@ -25,7 +25,10 @@ def run(args):
     import torch
     import shutil
     import json
+    import cv2
     from cp_distill.cellpose_ext import CellposeModelX
+    from cellpose.dynamics import masks_to_flows
+    from cellpose.transforms import make_tiles, resize_image, pad_image_ND
 
     # Debug memory usage
     if args.memory:
@@ -99,6 +102,7 @@ def run(args):
         device=device,
         save_directory=save_directory
     )
+    use_gpu = segmentation_model.gpu
 
     # Run Cellpose
     for i, image in enumerate(combined_images):
@@ -126,7 +130,6 @@ def run(args):
         for k in args.rotations:
             logging.info(f'Processing rotation {k} on {i+1}: {image}')
 
-            # TODO: Should this be saved?
             start = segmentation_model._count
             masks_array, flows, styles = segmentation_model.eval(
                 np.rot90(img, k=k, axes=axes),
@@ -135,6 +138,37 @@ def run(args):
                 diameter=diameter, normalize=False
             )
             logging.info(f'Saved {save_directory}: {start}-{segmentation_model._count - 1}')
+            if not args.compute_flows:
+                continue
+            logging.info('Computing flows')
+            # Use the mask to create flows
+            if args.scale_first:
+                masks_array = resize_image(masks_array,
+                    rsz=segmentation_model.last_rescale,
+                    interpolation=cv2.INTER_NEAREST,
+                    no_channels=True)
+            dP = masks_to_flows(masks_array,
+                use_gpu=use_gpu, device=device)
+            # Scale up the flows to match the trained Cellpose output
+            dP *= 5.
+            # Create tiles: Y-flow, X-flow, Map
+            # This is smoother if computed on the original mask then resized
+            # with interpolation.
+            m = np.where(masks_array > 0, 1.0, 0.0)
+            y = np.concatenate([dP, m[np.newaxis, ...]])
+            if not args.scale_first:
+                y = y.transpose((1,2,0))
+                y = resize_image(y, rsz=segmentation_model.last_rescale)
+                y = y.transpose((2,0,1))
+            y, *_ = pad_image_ND(y)
+            tiles, *_ = make_tiles(y)
+            ny, nx, nchan, ly, lx = tiles.shape
+            tiles = np.reshape(tiles, (ny*nx, nchan, ly, lx))
+            # Save tiles
+            for i in range(len(tiles)):
+                # TODO: Compute the difference to the current flows
+                np.save(os.path.join(save_directory, f'output_{start+i}.npy'),
+                    tiles[i])
 
     t = time.time() - start_time
     logging.info(f'Done (in {t} seconds)')
@@ -177,6 +211,13 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size', dest='batch_size', type=int,
         default=8,
         help='Batch size (default: %(default)s)')
+    parser.add_argument('--compute-flows', dest='compute_flows',
+        action='store_true',
+        help='Compute the flows from the predicted mask')
+    parser.add_argument('--scale-first', dest='scale_first',
+        action='store_true',
+        help='Scale the predicted mask before computing flows, otherwise' +
+            ' scale the computed flows')
 
     args = parser.parse_args()
     args.model = os.path.abspath(args.model)
