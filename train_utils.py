@@ -25,8 +25,13 @@ class KD_loss(torch.nn.Module):
         # Note: cellpose.dynamics.flow_error computes the error between
         # the actual flows of the mask and the network flows as:
         # (dP_masks[i] - dP_net[i]/5.)**2
+        # dynamics.compute_masks uses:
+        # p, inds = follow_flows(dP * cp_mask / 5., niter=niter, interp=interp, 
+        #                                    use_gpu=use_gpu, device=device)
+        # models.CellposeModel.loss_fn uses:
+        #    veci = 5. * self._to_device(lbl[:,1:])
         # So the cellpose network flows are trained to output a flow
-        # 5 times as large as the actual mask flow ???
+        # 5 times as large as the actual mask flow.
         #
         # Q. Why divide by 80 at the end?
         veci = 5. * y_3_true[:,:2]
