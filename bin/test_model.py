@@ -141,7 +141,10 @@ def run(args):
             img,
             channels=channels,
             batch_size=args.batch_size,
-            diameter=diameter, normalize=False
+            diameter=diameter, normalize=False,
+            cellprob_threshold=args.cellprob_threshold,
+            flow_threshold=args.flow_threshold, interp=args.interp,
+            min_size=args.min_size,
         )
         t1 = time.time() - t1
         m1 = filter_segmentation(masks_array)
@@ -153,6 +156,9 @@ def run(args):
             channels=channels,
             batch_size=args.batch_size,
             diameter=diameter, normalize=False,
+            cellprob_threshold=args.cellprob_threshold,
+            flow_threshold=args.flow_threshold, interp=args.interp,
+            min_size=args.min_size,
             # This is required to avoid loading the original model again
             model_loaded=True
         )
@@ -220,12 +226,25 @@ if __name__ == '__main__':
         help='Save directory')
     parser.add_argument('--save-tiles', dest='save_tiles', action='store_true',
         help='Save network input/output tiles')
-    parser.add_argument('--batch-size', dest='batch_size', type=int,
-        default=8,
-        help='Batch size (default: %(default)s)')
     parser.add_argument('--threshold', nargs='+', type=float,
         default=[0.5, 0.75, 0.9],
         help='Threshold for true positive match (default: %(default)s)')
+    group = parser.add_argument_group('Cellpose')
+    group.add_argument('--batch-size', dest='batch_size', type=int,
+        default=8,
+        help='Batch size (default: %(default)s)')
+    group.add_argument('--cellprob-threshold', dest='cellprob_threshold',
+        type=float, default=0.0,
+        help='Cell probability threshold (for the probability map)')
+    group.add_argument('--flow-threshold', dest='flow_threshold', type=float,
+        default=0.4,
+        help='Flow threshold (for the match between predicted flows and mask flows).' +
+        ' Use 0.0 to output the maximum number of mask objects.')
+    group.add_argument('--interp', type=bool, default=True,
+        help='Interpolate flows')
+    group.add_argument('--min-size', dest='min_size', type=int,
+        default=15,
+        help='Minimum object size')
 
     args = parser.parse_args()
     run(args)
