@@ -167,10 +167,10 @@ def run(args):
             ny, nx, nchan, ly, lx = tiles.shape
             tiles = np.reshape(tiles, (ny*nx, nchan, ly, lx))
             # Save tiles
-            for i in range(len(tiles)):
+            for j in range(len(tiles)):
                 # TODO: Compute the difference to the current flows
                 np.save(os.path.join(save_directory, f'output_{start+i}.npy'),
-                    tiles[i])
+                    tiles[j])
 
     t = time.time() - start_time
     logging.info(f'Done (in {t} seconds)')
