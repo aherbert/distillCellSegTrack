@@ -77,6 +77,9 @@ class CellposeLoss(torch.nn.Module):
     def forward(self, y, y32, y_pred, y32_pred):
         # Based on cellpose.models.CellposeModel.loss_fn
         # y is N x Ch x Y x X
+        # Note: Here y corresponds to the Cellpose output and not the
+        # flows computed from a mask. Thus we do not require the 5-fold
+        # factor: veci = 5. * y[:,:2]
         veci = y[:,:2]
         lbl = torch.where(y[:,2] > 0, 1.0, 0.0)
         loss = self.criterion(y_pred[:,:2], veci)
