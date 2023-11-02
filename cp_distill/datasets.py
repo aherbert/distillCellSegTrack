@@ -91,5 +91,5 @@ class CPDataset(Dataset):
         y32 = np.load(os.path.join(self._directory, f'output32_{n}.npy'))
         # Pad greyscale images to 2 channels
         if x.ndim == 2:
-            x = np.array([x, np.zeros(x.shape)])
+            x = np.array([x, np.zeros(x.shape, dtype=np.float32)])
         return x, y, y32
