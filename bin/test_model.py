@@ -60,9 +60,11 @@ def run(args):
         else:
             raise FileNotFoundError(f)
 
+    device = torch.device(args.device)
+
     # Load the student model
     logging.info(f'Loading model state: {args.model}')
-    state = torch.load(args.model)
+    state = torch.load(args.model, map_location=device)
 
     # Configure Cellpose arguments
     cyto = state['cyto']
@@ -75,10 +77,12 @@ def run(args):
         # to segment grayscale images, input [0,0]
         channels = [0, 0]
         diameter = 10
-    device = torch.device(args.device)
 
     # Create Cellpose
-    cellpose_model = state['model']
+    cellpose_model = os.path.abspath(args.cellpose_model) if args.cellpose_model else state['model']
+    if not os.path.isfile(cellpose_model):
+        logging.error(f'Model not found {cellpose_model}')
+        exit(1)
     model = CellposeModelX(
         model_type=cellpose_model,
         # Not used in create_dataset.py
@@ -224,6 +228,9 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--model', dest='model', type=file_path,
         required=True,
         help='CellPose student model state file')
+    parser.add_argument('-c', '--cellpose-model', dest='cellpose_model',
+        type=file_path,
+        help='CellPose model file (override the model path in the state file)')
     parser.add_argument('--cyto-channel', dest='cyto_channel', type=int,
         default=2,
         help='Cytoplasm channel (1-based index) (default: %(default)s)')
