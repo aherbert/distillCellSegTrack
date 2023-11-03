@@ -117,6 +117,8 @@ def run(args):
 
     # Run Cellpose
     all_aji = []
+    total1 = 0
+    total2 = 0
     for i, image in enumerate(combined_images):
         logging.info(f'Processing image {i+1}: {image}')
         img = np.load(image)
@@ -148,6 +150,7 @@ def run(args):
             min_size=args.min_size,
         )
         t1 = time.time() - t1
+        total1 += t1
         m1 = filter_segmentation(masks_array)
 
         # Run student model
@@ -164,6 +167,7 @@ def run(args):
             model_loaded=True
         )
         t2 = time.time() - t2
+        total2 += t2
         m2 = filter_segmentation(masks_array)
         logging.info(f'Time Cellpose {t1:.6f}, Student {t2:.6f} ({t2/t1:.6f})')
 
@@ -200,9 +204,11 @@ def run(args):
         # This script could compute the loss function on each batch for the
         # network outputs, and other metrics (see test_rotations.py)
 
+    t1, t2 = total1, total2
     logging.info('Images=%d; Match IoU: min=%.5f, max=%.5f, mean=%.5f, std=%.5f',
         len(all_aji), np.min(all_aji), np.max(all_aji),
         np.mean(all_aji), np.std(all_aji))
+    logging.info(f'Time Cellpose {t1:.6f}, Student {t2:.6f} ({t2/t1:.6f})')
     t = time.time() - start_time
     logging.info(f'Done (in {t} seconds)')
 
