@@ -116,6 +116,7 @@ def run(args):
     threshold = args.threshold
 
     # Run Cellpose
+    all_aji = []
     for i, image in enumerate(combined_images):
         logging.info(f'Processing image {i+1}: {image}')
         img = np.load(image)
@@ -190,6 +191,7 @@ def run(args):
             warnings.simplefilter("ignore")
             aji = aggregated_jaccard_index(masks_true, masks_pred)
             ap, tp, fp, fn = average_precision(masks_true, masks_pred, threshold=threshold)
+        all_aji.append(aji)
         logging.info(f'IoU {jac}, Match IoU {aji}')
         logging.info(f'Precision at {threshold}: {ap[0]}, TP {tp[0]}, FP {fp[0]}, FN {fn[0]}')
 
@@ -198,6 +200,9 @@ def run(args):
         # This script could compute the loss function on each batch for the
         # network outputs, and other metrics (see test_rotations.py)
 
+    logging.info('Images=%d; Match IoU: min=%.5f, max=%.5f, mean=%.5f, std=%.5f',
+        len(all_aji), np.min(all_aji), np.max(all_aji),
+        np.mean(all_aji), np.std(all_aji))
     t = time.time() - start_time
     logging.info(f'Done (in {t} seconds)')
 
