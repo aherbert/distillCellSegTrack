@@ -199,6 +199,9 @@ def run(args):
         scheduler.step()
 
     if args.wandb:
+        wandb.save(args.state)
+        wandb.save(checkpoint_name)
+        wandb.save(checkpoint_name + '.best')
         wandb.finish()
     t = time.time() - start_time
     logging.info(f'Done (in {t:.6g} seconds)')
