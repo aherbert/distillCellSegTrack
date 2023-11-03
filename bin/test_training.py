@@ -23,6 +23,11 @@ class Existing(str, Enum):
     def __str__(self):
         return self.value
 
+def none_or_str(value):
+    if value == 'None':
+        return None
+    return value
+
 class StoppingCriteria:
     def __init__(self, patience=3, min_delta=0.0, min_rel_delta=1e-4):
         """
@@ -170,7 +175,9 @@ def run(args):
        min_rel_delta=args.rel_delta)
 
     if args.wandb:
-        wandb.init(project=args.project, config=vars(args))
+        wandb.init(entity=args.entity,
+                   project=args.project,
+                   config=vars(args))
 
     for i in range(args.epochs):
         epoch += 1
@@ -280,8 +287,11 @@ if __name__ == '__main__':
         help='Log level (default: %(default)s). WARNING=30; INFO=20; DEBUG=10')
     parser.add_argument('--wandb', dest='wandb', action='store_true',
         help='Log to Weights and Biases (must be logged in)')
-    group.add_argument('--project', dest='project', type=str,
+    group.add_argument('--entity', dest='entity', type=none_or_str,
         default='cellpose-distill',
+        help='Weights and Biases team (default: %(default)s)')
+    group.add_argument('--project', dest='project', type=str,
+        default='cellpose-distill1',
         help='Weights and Biases project (default: %(default)s)')
 
     args = parser.parse_args()
