@@ -127,7 +127,7 @@ def run(args):
             logging.error(f'Checkpoint exists: {checkpoint_name}')
             exit(1)
         if args.existing == Existing.load:
-            checkpoint = torch.load(checkpoint_name)
+            checkpoint = torch.load(checkpoint_name, map_location=device)
             net.load_state_dict(checkpoint['model_state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             epoch = checkpoint['epoch']

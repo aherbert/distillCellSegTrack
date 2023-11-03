@@ -25,9 +25,10 @@ def run(args):
         format='[%(asctime)s] %(levelname)s - %(message)s',
         level=logging.INFO)
 
+    device = torch.device(args.device)
     if not args.file:
         logging.info(f'Loading model state: {args.model}')
-        state = torch.load(args.model)
+        state = torch.load(args.model, map_location=device)
         del state['model_state_dict']
         s = json.dumps(state, indent=2)
         logging.info(f'Model state: {s}')
@@ -54,7 +55,7 @@ def run(args):
     if os.path.exists(filename + '.best'):
         filename += '.best'
     logging.info(f'Loading checkpoint: {filename}')
-    checkpoint = torch.load(filename)
+    checkpoint = torch.load(filename, map_location=device)
     
     # Create model state
     state = {}
@@ -86,6 +87,9 @@ if __name__ == '__main__':
         help='Model state file')
     parser.add_argument('-f', '--force', dest='force', action='store_true',
         help='Overwrite existing model state file')
+    parser.add_argument('-d', '--device', dest='device',
+        default='cpu',
+        help='Device (default: %(default)s)')
 
     args = parser.parse_args()
     run(args)
