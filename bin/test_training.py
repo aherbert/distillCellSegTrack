@@ -103,6 +103,12 @@ def run(args):
 
     start_time = time.time()
 
+    if args.wandb:
+        # Do this early to capture logging to W&B
+        wandb.init(entity=args.entity,
+                   project=args.project,
+                   config=vars(args))
+
     # Create Cellpose network
     device = torch.device(args.device)
     torch.manual_seed(args.seed)
@@ -176,11 +182,6 @@ def run(args):
     # control point over early termination.
     val_stop = StoppingCriteria(patience=args.patience, min_delta=args.delta,
        min_rel_delta=args.rel_delta)
-
-    if args.wandb:
-        wandb.init(entity=args.entity,
-                   project=args.project,
-                   config=vars(args))
 
     for i in range(args.epochs):
         epoch += 1
