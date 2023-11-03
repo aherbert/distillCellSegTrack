@@ -70,6 +70,10 @@ class CPDataset(Dataset):
 
     image_directory: str
         Image directory
+
+    load_y32: bool (default: False)
+        Load the 32-channel upsample layer. Only load this if it is required
+        for the loss function.
     """
     def __init__(self, images, image_directory,
                  load_y32=False):
