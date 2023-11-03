@@ -295,7 +295,7 @@ if __name__ == '__main__':
         default='cellpose-distill',
         help='Weights and Biases team (default: %(default)s)')
     group.add_argument('--project', dest='project', type=str,
-        default='cellpose-distill1',
+        default='cellpose-distill',
         help='Weights and Biases project (default: %(default)s)')
 
     args = parser.parse_args()
