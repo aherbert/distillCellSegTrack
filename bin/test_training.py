@@ -247,16 +247,16 @@ if __name__ == '__main__':
 
     group = parser.add_argument_group('Training')
     group.add_argument('--epochs', dest='epochs', type=int,
-        default=1,
+        default=2000,
         help='Training epochs (default: %(default)s)')
     group.add_argument('--batch-size', dest='batch_size', type=int,
-        default=8,
+        default=128,
         help='Batch size for the data loader (default: %(default)s)')
     group.add_argument('--seed', dest='seed', type=int,
         default=0xdeadbeef,
         help='Random seed for initial model (default: %(default)s)')
     group.add_argument('--test-size', dest='test_size', type=float,
-        default=0.25,
+        default=0.1,
         help='Size for the test data (default: %(default)s)')
     group.add_argument('--lr', dest='learning_rate', type=float,
         default=0.01,
