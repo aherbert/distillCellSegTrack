@@ -71,11 +71,13 @@ class CPDataset(Dataset):
     image_directory: str
         Image directory
     """
-    def __init__(self, images, image_directory):
+    def __init__(self, images, image_directory,
+                 load_y32=False):
         self._images = np.array(images).reshape(-1)
         self._directory = image_directory
         if len(images) == 0:
             raise Exception("No image numbers provided")
+        self._load_y32 = load_y32
         # This constructor could validate all images exist.
         # Currently an invalid constructor will throw errors when
         # retrieving a dataset item
@@ -88,8 +90,12 @@ class CPDataset(Dataset):
         # No validation on inputs
         x = np.load(os.path.join(self._directory, f'input_{n}.npy'))
         y = np.load(os.path.join(self._directory, f'output_{n}.npy'))
-        y32 = np.load(os.path.join(self._directory, f'output32_{n}.npy'))
+        if self._load_y32:
+            y32 = np.load(os.path.join(self._directory, f'output32_{n}.npy'))
+        else:
+            y32 = np.zeros((32, 0, 0), dtype=np.float32)
         # Pad greyscale images to 2 channels
         if x.ndim == 2:
+            # Note: No noticeable benefit from caching this
             x = np.array([x, np.zeros(x.shape, dtype=np.float32)])
         return x, y, y32

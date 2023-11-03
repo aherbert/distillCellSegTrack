@@ -155,8 +155,11 @@ def run(args):
                             test_size=args.test_size, shuffle=False)
     logging.info(f'Size train {len(y)} : validation {len(z)}')
 
-    train_loader = DataLoader(CPDataset(y, args.directory), batch_size=args.batch_size)
-    validation_loader = DataLoader(CPDataset(z, args.directory), batch_size=args.batch_size)
+    # Loss function does not use y32
+    train_loader = DataLoader(CPDataset(y, args.directory, load_y32=False),
+        batch_size=args.batch_size)
+    validation_loader = DataLoader(CPDataset(z, args.directory, load_y32=False),
+        batch_size=args.batch_size)
 
     # Create training objects
     loss_fn = CellposeLoss()
