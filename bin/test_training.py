@@ -89,6 +89,8 @@ def run(args):
     from cp_distill.cellpose_ext import CPnetX
     from cp_distill.training import CellposeLoss, train_epoch
     from sklearn.model_selection import train_test_split
+    if args.wandb:
+        import wandb
 
     logging.basicConfig(
         format='[%(asctime)s] %(levelname)s - %(message)s',
@@ -167,6 +169,9 @@ def run(args):
     val_stop = StoppingCriteria(patience=args.patience, min_delta=args.delta,
        min_rel_delta=args.rel_delta)
 
+    if args.wandb:
+        wandb.init(project=args.project, config=vars(args))
+
     for i in range(args.epochs):
         epoch += 1
         train_loss, val_loss = \
@@ -186,11 +191,15 @@ def run(args):
         if better:
             shutil.copy2(checkpoint_name, checkpoint_name + '.best')
         logging.info('[%d] Loss train %s : validation %s', epoch, train_loss, val_loss)
+        if args.wandb:
+            wandb.log({'train_loss': train_loss, 'val_loss': val_loss})
         if train_stop.check(train_loss) and val_stop.check(val_loss):
             logging.info('[%d] Stopping due to no improvement', epoch)
             break
         scheduler.step()
-        
+
+    if args.wandb:
+        wandb.finish()
     t = time.time() - start_time
     logging.info(f'Done (in {t:.6g} seconds)')
 
@@ -266,6 +275,11 @@ if __name__ == '__main__':
     group.add_argument('--log-level', dest='log_level', type=int,
         default=20,
         help='Log level (default: %(default)s). WARNING=30; INFO=20; DEBUG=10')
+    parser.add_argument('--wandb', dest='wandb', action='store_true',
+        help='Log to Weights and Biases (must be logged in)')
+    group.add_argument('--project', dest='project', type=str,
+        default='cellpose-distill',
+        help='Weights and Biases project (default: %(default)s)')
 
     args = parser.parse_args()
 
