@@ -107,7 +107,7 @@ def run(args):
         # Do this early to capture logging to W&B
         wandb.init(entity=args.entity,
                    project=args.project,
-                   name=args.name,
+                   name=args.run_name,
                    config=vars(args))
 
     # Create Cellpose network
@@ -298,7 +298,7 @@ if __name__ == '__main__':
     group.add_argument('--project', dest='project', type=str,
         default='cellpose-distill',
         help='Weights and Biases project (default: %(default)s)')
-    group.add_argument('--name', dest='name', type=str,
+    group.add_argument('--run-name', dest='run_name', type=str,
         help='Weights and Biases run display name')
 
     args = parser.parse_args()
