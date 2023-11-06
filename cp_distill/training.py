@@ -116,16 +116,25 @@ def train_epoch(net, train_loader, validation_loader, loss_fn, optimiser, device
         Validation loss.
     """
 
+    # Asynchronous GPU copy
+
     # Training
     net.train()
     train_loss = 0
     n = 0
-    for x, y, y32 in train_loader:
+    data_iter = iter(train_loader)
+    
+    next_batch = next(data_iter)
+    next_batch = [ _.to(device, non_blocking=True) for _ in next_batch ]
+    
+    for i in range(len(train_loader)):
+        x, y, y32 = next_batch
+        if i + 1 != len(train_loader): 
+            # start copying data of next batch
+            next_batch = next(data_iter)
+            next_batch = [ _.to(device, non_blocking=True) for _ in next_batch ]
 
         n += len(x)
-        if device is not None:
-            # sending the data to the device (cpu or GPU)
-            x, y, y32 = x.to(device), y.to(device), y32.to(device)
 
         y_pred, _, y32_pred = net(x)
         del x
@@ -150,12 +159,19 @@ def train_epoch(net, train_loader, validation_loader, loss_fn, optimiser, device
     net.eval()
     val_loss = 0
     n = 0
-    for x, y, y32 in validation_loader:
+    data_iter = iter(validation_loader)
+
+    next_batch = next(data_iter)
+    next_batch = [ _.to(device, non_blocking=True) for _ in next_batch ]
+    
+    for i in range(len(validation_loader)):
+        x, y, y32 = next_batch
+        if i + 1 != len(validation_loader): 
+            # start copying data of next batch
+            next_batch = next(data_iter)
+            next_batch = [ _.to(device, non_blocking=True) for _ in next_batch ]
 
         n += len(x)
-        if device is not None:
-            # sending the data to the device (cpu or GPU)
-            x, y, y32 = x.to(device), y.to(device), y32.to(device)
 
         with torch.no_grad():
             y_pred, _, y32_pred = net(x)
