@@ -332,6 +332,5 @@ if __name__ == '__main__':
         # Save training state
         with open(args.state, 'w') as f:
             json.dump(args_d, f)
-    print(args.residual_on)
 
-    #run(args)
+    run(args)
