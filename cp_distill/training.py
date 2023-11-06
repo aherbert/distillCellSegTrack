@@ -123,13 +123,13 @@ def train_epoch(net, train_loader, validation_loader, loss_fn, optimiser, device
     train_loss = 0
     n = 0
     data_iter = iter(train_loader)
-    
+
     next_batch = next(data_iter)
     next_batch = [ _.to(device, non_blocking=True) for _ in next_batch ]
-    
+
     for i in range(len(train_loader)):
         x, y, y32 = next_batch
-        if i + 1 != len(train_loader): 
+        if i + 1 != len(train_loader):
             # start copying data of next batch
             next_batch = next(data_iter)
             next_batch = [ _.to(device, non_blocking=True) for _ in next_batch ]
@@ -163,10 +163,10 @@ def train_epoch(net, train_loader, validation_loader, loss_fn, optimiser, device
 
     next_batch = next(data_iter)
     next_batch = [ _.to(device, non_blocking=True) for _ in next_batch ]
-    
+
     for i in range(len(validation_loader)):
         x, y, y32 = next_batch
-        if i + 1 != len(validation_loader): 
+        if i + 1 != len(validation_loader):
             # start copying data of next batch
             next_batch = next(data_iter)
             next_batch = [ _.to(device, non_blocking=True) for _ in next_batch ]
