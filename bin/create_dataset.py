@@ -100,7 +100,9 @@ def run(args):
     segmentation_model = CellposeModelX(
         model_type=args.model,
         device=device,
-        save_directory=save_directory
+        save_directory=save_directory,
+        save_y32=args.save_y32,
+        save_styles=args.save_styles,
     )
     use_gpu = segmentation_model.gpu
 
@@ -212,6 +214,14 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--save', dest='save_dir', type=str,
         default='test_data',
         help='Save directory prefix (default: %(default)s)')
+    parser.add_argument('--save-y32', dest='save_y32',
+        default=False,
+        action=argparse.BooleanOptionalAction,
+        help='Save the 32-channel upsample layer (default: %(default)s)')
+    parser.add_argument('--save-styles', dest='save_styles',
+        default=False,
+        action=argparse.BooleanOptionalAction,
+        help='Save the styles (default: %(default)s)')
     parser.add_argument('--rotations', dest='rotations', nargs='+', type=int,
         default=[0],
         help='90-degree rotations, e.g. k=0 1 2 3 (default: %(default)s)')

@@ -115,6 +115,12 @@ class CellposeModelX(CellposeModel):
     save_directory: str (optional, default None)
         directory to save input to and output from the network (images
         will be saved with a counter suffix)
+
+    save_y32: bool (optional, default False)
+        if True, save the 32-channel upsample layer
+
+    save_styles: bool (optional, default False)
+        if True, save the styles
     """
 
     def __init__(self, gpu=False, pretrained_model=False,
@@ -122,7 +128,8 @@ class CellposeModelX(CellposeModel):
                     diam_mean=30., device=None,
                     residual_on=True, style_on=True, concatenation=False,
                     nchan=2,
-                    save_directory=None):
+                    save_directory=None,
+                    save_y32=False, save_styles=False):
         super(CellposeModelX, self).__init__(
             gpu=gpu, pretrained_model=pretrained_model,
             model_type=model_type, net_avg=net_avg,
@@ -132,6 +139,8 @@ class CellposeModelX(CellposeModel):
 
         # Validate save directory
         self._save_directory = None
+        self._save_y32 = save_y32
+        self._save_styles = save_styles
         if save_directory:
             if not os.path.isdir(save_directory):
                 raise NotADirectoryError(save_directory)
@@ -197,8 +206,10 @@ class CellposeModelX(CellposeModel):
                     a = a[0].squeeze()
                 np.save(os.path.join(self._save_directory, f'input_{self._count+i}.npy'), a)
                 np.save(os.path.join(self._save_directory, f'output_{self._count+i}.npy'), y[i])
-                np.save(os.path.join(self._save_directory, f'style_{self._count+i}.npy'), style[i])
-                np.save(os.path.join(self._save_directory, f'output32_{self._count+i}.npy'), y32[i])
+                if self._save_styles:
+                    np.save(os.path.join(self._save_directory, f'style_{self._count+i}.npy'), style[i])
+                if self._save_y32:
+                    np.save(os.path.join(self._save_directory, f'output32_{self._count+i}.npy'), y32[i])
 
             self._count += n
 
