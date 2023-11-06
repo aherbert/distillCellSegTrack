@@ -250,14 +250,17 @@ if __name__ == '__main__':
         default=[2, 32],
         help='Cellpose architecture (default: %(default)s). ' +
              '(Note: Cellpose uses [2, 32, 64, 128, 256].)')
-    group.add_argument('--residual_on', dest='residual_on', type=bool,
+    group.add_argument('--residual-on', dest='residual_on',
         default=True,
+        action=argparse.BooleanOptionalAction,
         help='Residual on (default: %(default)s)')
-    group.add_argument('--style_on', dest='style_on', type=bool,
+    group.add_argument('--style-on', dest='style_on',
         default=True,
+        action=argparse.BooleanOptionalAction,
         help='Style on (default: %(default)s)')
-    group.add_argument('--concatenation', dest='concatenation', type=bool,
+    group.add_argument('--concatenation', dest='concatenation',
         default=False,
+        action=argparse.BooleanOptionalAction,
         help='Concatenation (default: %(default)s)')
 
     group = parser.add_argument_group('Training')
@@ -329,5 +332,6 @@ if __name__ == '__main__':
         # Save training state
         with open(args.state, 'w') as f:
             json.dump(args_d, f)
+    print(args.residual_on)
 
-    run(args)
+    #run(args)

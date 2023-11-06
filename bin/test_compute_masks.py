@@ -102,7 +102,8 @@ if __name__ == '__main__':
         default=0.4,
         help='Flow threshold (for the match between predicted flows and mask flows).' +
         ' Use 0.0 to output the maximum number of mask objects.')
-    parser.add_argument('--interp', type=bool, default=True,
+    parser.add_argument('--interp', default=True,
+        action=argparse.BooleanOptionalAction,
         help='Interpolate flows')
     parser.add_argument('--min-size', dest='min_size', type=int,
         default=15,
