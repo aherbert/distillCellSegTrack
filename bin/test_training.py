@@ -163,10 +163,13 @@ def run(args):
     logging.info(f'Size train {len(y)} : validation {len(z)}')
 
     # Loss function does not use y32
+    use_gpu = device.type == 'cuda'
     train_loader = DataLoader(CPDataset(y, args.directory, load_y32=False),
-        batch_size=args.batch_size, num_workers=args.num_workers)
+        batch_size=args.batch_size, num_workers=args.num_workers,
+        pin_memory=use_gpu)
     validation_loader = DataLoader(CPDataset(z, args.directory, load_y32=False),
-        batch_size=args.batch_size, num_workers=args.num_workers)
+        batch_size=args.batch_size, num_workers=args.num_workers,
+        pin_memory=use_gpu)
 
     # Create training objects
     loss_fn = CellposeLoss()
@@ -184,7 +187,7 @@ def run(args):
     val_stop = StoppingCriteria(patience=args.patience, min_delta=args.delta,
        min_rel_delta=args.rel_delta)
 
-    if device.type == 'cuda' and args.cudnn_benchmark:
+    if use_gpu and args.cudnn_benchmark:
         torch.backends.cudnn.benchmark = True
 
     for i in range(args.epochs):
