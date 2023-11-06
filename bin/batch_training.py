@@ -45,7 +45,7 @@ def run(args):
             base = f'{prefix}{n}'
             if base in used:
                 continue
-            if not os.path.isfile(base + '.pt'):
+            if not (os.path.isfile(base + '.pt') and os.path.isfile(base + '.json')):
                 # This output file is OK
                 break
         used.add(base)
