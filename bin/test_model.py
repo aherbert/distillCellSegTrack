@@ -253,10 +253,11 @@ if __name__ == '__main__':
         help='Batch size (default: %(default)s)')
     group.add_argument('--cellprob-threshold', dest='cellprob_threshold',
         type=float, default=0.0,
-        help='Cell probability threshold (for the probability map)')
+        help='Cell probability threshold (default: %(default)s)')
     group.add_argument('--flow-threshold', dest='flow_threshold', type=float,
         default=0.4,
-        help='Flow threshold (for the match between predicted flows and mask flows).' +
+        help='Flow threshold (default: %(default)s)' +
+        ' (for the match between predicted flows and mask flows).' +
         ' Use 0.0 to output the maximum number of mask objects.')
     group.add_argument('--interp', default=True,
         action=argparse.BooleanOptionalAction,
