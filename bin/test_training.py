@@ -184,6 +184,9 @@ def run(args):
     val_stop = StoppingCriteria(patience=args.patience, min_delta=args.delta,
        min_rel_delta=args.rel_delta)
 
+    if device.type == 'cuda' and args.cudnn_benchmark:
+        torch.backends.cudnn.benchmark = True
+
     for i in range(args.epochs):
         epoch += 1
         train_loss, val_loss = \
@@ -235,6 +238,10 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--device', dest='device',
         default='cuda',
         help='Device (default: %(default)s)')
+    parser.add_argument('--cudnn-benchmark', dest='cudnn_benchmark',
+        default=False,
+        action=argparse.BooleanOptionalAction,
+        help='Run cuDNN autotuner (default: %(default)s)')
     parser.add_argument('-s', '--state', dest='state', type=str,
         default='training.json',
         help='Training state file (default: %(default)s)')
