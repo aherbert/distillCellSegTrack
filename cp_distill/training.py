@@ -136,7 +136,7 @@ def train_epoch(net, train_loader, validation_loader, loss_fn, optimiser, device
         # update model parameters
         loss.backward()
         optimiser.step()
-        optimiser.zero_grad()
+        optimiser.zero_grad(set_to_none=True)
 
         del y
         del y32
