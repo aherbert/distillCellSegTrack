@@ -17,6 +17,7 @@ import os
 import re
 import glob
 import numpy as np
+from torch import from_numpy
 from torch.utils.data import Dataset
 
 def find_images(directory):
@@ -102,4 +103,4 @@ class CPDataset(Dataset):
         if x.ndim == 2:
             # Note: No noticeable benefit from caching this
             x = np.array([x, np.zeros(x.shape, dtype=np.float32)])
-        return x, y, y32
+        return from_numpy(x), from_numpy(y), from_numpy(y32)
