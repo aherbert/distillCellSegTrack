@@ -104,15 +104,18 @@ def run(args):
     start_time = time.time()
 
     if args.wandb:
+        id = wandb.util.generate_id()
         # Do this early to capture logging to W&B
         # Tag with the dataset (remove the default prefix)
         tags = args.tags
         tags.append(args.directory.replace('test_data_', ''))
-        wandb.init(entity=args.entity,
+        wandb.init(id=id, resume="allow",
+                   entity=args.entity,
                    project=args.project,
                    name=args.run_name,
                    tags=tags,
                    config=vars(args))
+        logging.info(f'Initialised wandb: {id}')
 
     # Create Cellpose network
     device = torch.device(args.device)
