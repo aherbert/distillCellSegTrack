@@ -49,14 +49,14 @@ def run(args):
     logging.info(f'Loading training dataset settings: {filename}')
     with open(filename) as f:
         dataset = json.load(f)
-    
+
     # Load the (best) checkpoint
     filename = training['name']
     if os.path.exists(filename + '.best'):
         filename += '.best'
     logging.info(f'Loading checkpoint: {filename}')
     checkpoint = torch.load(filename, map_location=device)
-    
+
     # Create model state
     state = {}
     for k in ['nbase', 'residual_on', 'style_on', 'concatenation']:
@@ -68,7 +68,7 @@ def run(args):
 
     s = json.dumps(state, indent=2)
     logging.info(f'Model state: {s}')
-    
+
     # Save model
     state['model_state_dict'] = checkpoint['model_state_dict']
     logging.info(f'Saving model state: {args.model}')

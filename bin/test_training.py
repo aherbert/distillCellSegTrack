@@ -306,8 +306,11 @@ if __name__ == '__main__':
     group.add_argument('--log-level', dest='log_level', type=int,
         default=20,
         help='Log level (default: %(default)s). WARNING=30; INFO=20; DEBUG=10')
-    parser.add_argument('--wandb', dest='wandb', action='store_true',
-        help='Log to Weights and Biases (must be logged in, else works offline)')
+    parser.add_argument('--wandb',
+        default=False,
+        action=argparse.BooleanOptionalAction,
+        help='Log to Weights and Biases (default: %(default)s).' +
+          ' Must be logged in, else works offline.')
     group.add_argument('--entity', dest='entity', type=none_or_str,
         default='cellpose-distill',
         help='Weights and Biases team (default: %(default)s)')

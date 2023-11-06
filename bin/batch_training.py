@@ -52,7 +52,7 @@ def run(args):
         cmd.extend(['-n', base + '.pt',
                     '-s', base + '.json'])
         out = base + '.out'
-        logging.info(f'Run {cmd} > {out}')       
+        logging.info(f'Run {cmd} > {out}')
         if args.dry_run:
             continue
         f = open(out, "w")
@@ -66,8 +66,9 @@ if __name__ == '__main__':
 
     parser.add_argument('batch', metavar='BATCH', type=file_path,
         help='Batch arguments file')
-    parser.add_argument('-d', '--dry-run', dest='dry_run', action='store_true',
-        help='Perform a dry run')
+    parser.add_argument('--dry-run', dest='dry_run',
+        default=False, action=argparse.BooleanOptionalAction,
+        help='Perform a dry run (default: %(default)s)')
 
     args = parser.parse_args()
     run(args)

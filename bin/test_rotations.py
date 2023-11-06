@@ -133,7 +133,7 @@ def run(args):
             if args.save_dir:
                 a = yy
                 b = yy32
-                if not args.no_rotate_saved:
+                if args.rotate_saved:
                     # Rotate back
                     a = torch.rot90(yy, k=-1*k, dims=(1,2))
                     b = torch.rot90(yy32, k=-1*k, dims=(1,2))
@@ -240,10 +240,14 @@ if __name__ == '__main__':
         help='Device (default: %(default)s)')
     parser.add_argument('-s', '--save', dest='save_dir', type=dir_path,
         help='Save directory prefix (default: %(default)s)')
-    parser.add_argument('--no-rotate-saved', dest='no_rotate_saved', action='store_true',
-        help='Save the original rotated output. Default is to rotate back.')
-    parser.add_argument('--matching', dest='matching', action='store_true',
-        help='Perform an all-vs-all matching on the output flows and 32-channel layers.')
+    parser.add_argument('--rotate-saved', dest='rotate_saved',
+        default=True,
+        action=argparse.BooleanOptionalAction,
+        help='Rotate back before save, otherwise save the original rotated output (default: %(default)s)')
+    parser.add_argument('--matching',
+        default=False,
+        action=argparse.BooleanOptionalAction,
+        help='Perform an all-vs-all matching on the output flows and 32-channel layers (default: %(default)s)')
     parser.add_argument('--log-level', dest='log_level', type=int,
         default=20,
         help='Log level (default: %(default)s). WARNING=30; INFO=20; DEBUG=10')

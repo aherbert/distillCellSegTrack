@@ -195,31 +195,39 @@ if __name__ == '__main__':
     parser.add_argument('--nuclei-channel', dest='nuclei_channel', type=int,
         default=1,
         help='Nuclei channel (1-based index) (default: %(default)s)')
-    parser.add_argument('--cyto', dest='cyto', action='store_true',
-        help='Cytoplasm model (run with 2 channels; defaults to nuclei channel only)')
+    parser.add_argument('--cyto',
+        default=False,
+        action=argparse.BooleanOptionalAction,
+        help='Cytoplasm model (default: %(default)s). Run with 2 channels; defaults to nuclei channel only.')
     parser.add_argument('-d', '--device', dest='device',
         default='cuda',
         help='Device (default: %(default)s)')
-    parser.add_argument('--memory', dest='memory', action='store_true',
-        help='Debug memory usage')
+    parser.add_argument('--memory', dest='memory',
+        default=False,
+        action=argparse.BooleanOptionalAction,
+        help='Debug memory usage (default: %(default)s)')
     parser.add_argument('-s', '--save', dest='save_dir', type=str,
         default='test_data',
         help='Save directory prefix (default: %(default)s)')
     parser.add_argument('--rotations', dest='rotations', nargs='+', type=int,
         default=[0],
         help='90-degree rotations, e.g. k=0 1 2 3 (default: %(default)s)')
-    parser.add_argument('--delete', dest='delete', action='store_true',
-        help='Delete existing data (default is to error)')
+    parser.add_argument('--delete',
+        default=False,
+        action=argparse.BooleanOptionalAction,
+        help='Delete existing data, otherwise error (default: %(default)s)')
     parser.add_argument('--batch-size', dest='batch_size', type=int,
         default=8,
         help='Batch size (default: %(default)s)')
     parser.add_argument('--compute-flows', dest='compute_flows',
-        action='store_true',
-        help='Compute the flows from the predicted mask')
+        default=False,
+        action=argparse.BooleanOptionalAction,
+        help='Compute the flows from the predicted mask (default: %(default)s)')
     parser.add_argument('--scale-first', dest='scale_first',
-        action='store_true',
+        default=False,
+        action=argparse.BooleanOptionalAction,
         help='Scale the predicted mask before computing flows, otherwise' +
-            ' scale the computed flows')
+            ' scale the computed flows (default: %(default)s)')
 
     args = parser.parse_args()
     args.model = os.path.abspath(args.model)

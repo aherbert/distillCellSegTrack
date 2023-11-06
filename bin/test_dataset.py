@@ -75,13 +75,17 @@ if __name__ == '__main__':
     parser.add_argument('--log-level', dest='log_level', type=int,
         default=20,
         help='Log level (default: %(default)s). WARNING=30; INFO=20; DEBUG=10')
-    parser.add_argument('--load', dest='load', action='store_true',
-        help='Load the dataset')
+    parser.add_argument('--load',
+        default=False,
+        action=argparse.BooleanOptionalAction,
+        help='Load the dataset (default: %(default)s)')
     parser.add_argument('--batch-size', dest='batch_size', type=int,
         default=8,
         help='Batch size for the data loader (default: %(default)s)')
-    parser.add_argument('--load-y32', dest='load_y32', action='store_true',
-        help='Load the 32-channel upsample layer.')
+    parser.add_argument('--load-y32', dest='load_y32',
+        default=False,
+        action=argparse.BooleanOptionalAction,
+        help='Load the 32-channel upsample layer (default: %(default)s)')
     parser.add_argument('--num-workers', dest='num_workers', type=int,
         default=0,
         help='Number of workeres for asynchronous data loading (default: %(default)s)')
