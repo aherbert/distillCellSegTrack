@@ -89,11 +89,11 @@ def run(args):
     if args.cyto:
         # [[channel to segment, optional nuclear channel]]
         channels = [2, 1]
-        diameter = 40
+        diameter = args.diameter if args.diameter else 40
     else:
         # to segment grayscale images, input [0,0]
         channels = [0, 0]
-        diameter = 10
+        diameter = args.diameter if args.diameter else 10
     device = torch.device(args.device)
 
     # Create Cellpose with option to save input/output
@@ -199,6 +199,9 @@ if __name__ == '__main__':
         default=False,
         action=argparse.BooleanOptionalAction,
         help='Cytoplasm model (default: %(default)s). Run with 2 channels; defaults to nuclei channel only.')
+    parser.add_argument('--diameter', type=float,
+        default=0,
+        help='Diameter (default: nuclei=10; cyto=40)')
     parser.add_argument('-d', '--device', dest='device',
         default='cuda',
         help='Device (default: %(default)s)')
