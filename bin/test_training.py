@@ -281,7 +281,7 @@ if __name__ == '__main__':
         default=128,
         help='Batch size for the data loader (default: %(default)s)')
     parser.add_argument('--num-workers', dest='num_workers', type=int,
-        default=4,
+        default=8,
         help='Number of workers for asynchronous data loading (default: %(default)s)')
     group.add_argument('--seed', dest='seed', type=int,
         default=0xdeadbeef,
