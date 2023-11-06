@@ -33,7 +33,7 @@ def run(args):
         if not images:
             logging.warning(f"Dataset: {d} has no image tiles")
             continue
-        dataset = CPDataset(images, d);
+        dataset = CPDataset(images, d, load_y32=args.load_y32);
         x, y, y32 = dataset[0]
         logging.debug('Data shapes: %s, %s, %s', x.shape, y.shape, y32.shape)
         for (ch, data, name) in [(2, x, 'x'), (3, y, 'y'), (32, y32, 'y32')]:
@@ -42,7 +42,7 @@ def run(args):
                                 data.shape)
             if ch == 2:
                 tile = data.shape[1:]
-            elif tile != data.shape[1:]:
+            elif tile != data.shape[1:] and (args.load_y32 or ch != 32):
                 logging.warning(f"Dataset: {d} : x and {name} tile size mismatch, %s vs %s",
                                 tile, data.shape[1:])
         logging.info(f"Dataset: {d} : tiles = {len(dataset)} : tile dimensions {tile}")
@@ -79,6 +79,8 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size', dest='batch_size', type=int,
         default=8,
         help='Batch size for the data loader (default: %(default)s)')
+    parser.add_argument('--load-y32', dest='load_y32', action='store_true',
+        help='Load the 32-channel upsample layer.')
 
     args = parser.parse_args()
     run(args)
