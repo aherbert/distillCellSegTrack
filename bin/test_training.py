@@ -105,9 +105,13 @@ def run(args):
 
     if args.wandb:
         # Do this early to capture logging to W&B
+        # Tag with the dataset (remove the default prefix)
+        tags = args.tags
+        tags.append(args.directory.replace('test_data_', ''))
         wandb.init(entity=args.entity,
                    project=args.project,
                    name=args.run_name,
+                   tags=tags,
                    config=vars(args))
 
     # Create Cellpose network
@@ -319,6 +323,8 @@ if __name__ == '__main__':
         help='Weights and Biases project (default: %(default)s)')
     group.add_argument('--run-name', dest='run_name', type=str,
         help='Weights and Biases run display name')
+    group.add_argument('--tags', nargs='+', default=[],
+        help='Weights and Biases tags')
 
     args = parser.parse_args()
 
