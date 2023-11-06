@@ -88,7 +88,7 @@ if __name__ == '__main__':
         help='Load the 32-channel upsample layer (default: %(default)s)')
     parser.add_argument('--num-workers', dest='num_workers', type=int,
         default=0,
-        help='Number of workeres for asynchronous data loading (default: %(default)s)')
+        help='Number of workers for asynchronous data loading (default: %(default)s)')
 
     args = parser.parse_args()
     run(args)
