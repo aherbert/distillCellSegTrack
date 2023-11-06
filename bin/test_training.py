@@ -281,8 +281,8 @@ if __name__ == '__main__':
         default=128,
         help='Batch size for the data loader (default: %(default)s)')
     parser.add_argument('--num-workers', dest='num_workers', type=int,
-        default=0,
-        help='Number of workeres for asynchronous data loading (default: %(default)s)')
+        default=4,
+        help='Number of workers for asynchronous data loading (default: %(default)s)')
     group.add_argument('--seed', dest='seed', type=int,
         default=0xdeadbeef,
         help='Random seed for initial model (default: %(default)s)')
