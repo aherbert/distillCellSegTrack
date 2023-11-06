@@ -50,7 +50,8 @@ def run(args):
         # Try running through a batch loader
         if args.load:
             start_time = time.time()
-            loader = DataLoader(dataset, batch_size=args.batch_size)
+            loader = DataLoader(dataset, batch_size=args.batch_size,
+                num_workers=args.num_workers)
             for i, (x, y, y32) in enumerate(loader):
                 if i == 0:
                     s1, s2, s3 = x.shape, y.shape, y32.shape
@@ -81,6 +82,9 @@ if __name__ == '__main__':
         help='Batch size for the data loader (default: %(default)s)')
     parser.add_argument('--load-y32', dest='load_y32', action='store_true',
         help='Load the 32-channel upsample layer.')
+    parser.add_argument('--num-workers', dest='num_workers', type=int,
+        default=0,
+        help='Number of workeres for asynchronous data loading (default: %(default)s)')
 
     args = parser.parse_args()
     run(args)

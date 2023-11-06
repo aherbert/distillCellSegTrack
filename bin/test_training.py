@@ -164,9 +164,9 @@ def run(args):
 
     # Loss function does not use y32
     train_loader = DataLoader(CPDataset(y, args.directory, load_y32=False),
-        batch_size=args.batch_size)
+        batch_size=args.batch_size, num_workers=args.num_workers)
     validation_loader = DataLoader(CPDataset(z, args.directory, load_y32=False),
-        batch_size=args.batch_size)
+        batch_size=args.batch_size, num_workers=args.num_workers)
 
     # Create training objects
     loss_fn = CellposeLoss()
@@ -270,6 +270,9 @@ if __name__ == '__main__':
     group.add_argument('--batch-size', dest='batch_size', type=int,
         default=128,
         help='Batch size for the data loader (default: %(default)s)')
+    parser.add_argument('--num-workers', dest='num_workers', type=int,
+        default=0,
+        help='Number of workeres for asynchronous data loading (default: %(default)s)')
     group.add_argument('--seed', dest='seed', type=int,
         default=0xdeadbeef,
         help='Random seed for initial model (default: %(default)s)')
