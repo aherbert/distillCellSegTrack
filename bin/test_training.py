@@ -328,7 +328,7 @@ if __name__ == '__main__':
         default=0.5,
         help='The learning rate scheduler gamma (default: %(default)s)')
     group.add_argument('--lr-step', dest='lr_step_size', type=int,
-        default=100,
+        default=150,
         help='The learning rate scheduler step size (default: %(default)s)')
     group.add_argument('--patience', dest='patience', type=int,
         default=10,
