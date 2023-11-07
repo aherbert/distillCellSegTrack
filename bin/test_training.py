@@ -102,22 +102,41 @@ def run(args):
         level=args.log_level)
 
     start_time = time.time()
+    restart = hasattr(args, 'restart')
 
+    # Weights and Biases support
     if args.wandb:
-        id = wandb.util.generate_id()
-        # Do this early to capture logging to W&B
-        # Tag with the dataset (remove the default prefix)
-        tags = args.tags
-        tags.append(args.directory.replace('test_data_', ''))
-        wandb.init(id=id, resume="allow",
-                   entity=args.entity,
-                   project=args.project,
-                   name=args.run_name,
-                   tags=tags,
-                   config=vars(args))
-        logging.info(f'Initialised wandb: {id}')
-        # Save the state file required to restart the run
-        wandb.save(args.state)
+        has_id = hasattr(args, 'wandb_id')
+        if restart:
+            if not has_id:
+                raise Exception('Cannot restart without W&B id')
+            wandb_id = args.wandb_id
+            wandb.init(id=wandb_id, resume='must',
+                       entity=args.entity,
+                       project=args.project)
+            logging.info(f'Restarted wandb: {wandb_id}')
+        else:
+            wandb_id = args.wandb_id if has_id else wandb.util.generate_id()
+            # Tag with the dataset (remove the default prefix)
+            tags = args.tags
+            tags.append(args.directory.replace('test_data_', ''))
+            # Do this early to capture logging to W&B
+            wandb.init(id=wandb_id, resume='allow',
+                       entity=args.entity,
+                       project=args.project,
+                       name=args.run_name,
+                       tags=tags,
+                       config=vars(args))
+            logging.info(f'Initialised wandb: {wandb_id}')
+            args.wandb_id = wandb_id
+ 
+    if not restart:
+        # Save training state
+        with open(args.state, 'w') as f:
+            json.dump(vars(args), f)
+        if args.wandb:
+            # Save the state file required to restart the run
+            wandb.save(args.state)
 
     # Create Cellpose network
     device = torch.device(args.device)
@@ -330,6 +349,8 @@ if __name__ == '__main__':
         help='Weights and Biases run display name')
     group.add_argument('--tags', nargs='+', default=[],
         help='Weights and Biases tags')
+    group.add_argument('--wandb-id', dest='wandb_id', type=str,
+        help='Weights and Biases ID (overrides generated/saved state id)')
 
     args = parser.parse_args()
 
@@ -337,7 +358,6 @@ if __name__ == '__main__':
     import os
     import json
 
-    args_d = vars(args)
     if os.path.isfile(args.directory):
         # Continue training
         with open(args.directory) as f:
@@ -349,15 +369,16 @@ if __name__ == '__main__':
         # Allow some arguments to override the previous training state.
         import sys
         saved = {}
-        for s in ['log-level', 'epochs']:
+        args_d = vars(args)
+        for s in ['log-level', 'epochs', 'wandb']:
            if '--' + s in sys.argv:
                 s = s.replace('-', '_')
                 saved[s] = args_d[s]
         args_d.update(d)
         args_d.update(saved)
-    else:
-        # Save training state
-        with open(args.state, 'w') as f:
-            json.dump(args_d, f)
+        args.restart = True
+
+    if args.wandb_id is None:
+        del args.wandb_id
 
     run(args)
