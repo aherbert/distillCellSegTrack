@@ -171,6 +171,10 @@ def run(args):
             checkpoint = torch.load(checkpoint_name, map_location=device)
             net.load_state_dict(checkpoint['model_state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            # Work-around for old tensor states not saved on the same device
+            from cp_distill.torch_utils import optimizer_to
+            net = net.to(device)
+            optimizer_to(optimizer, device)
             epoch = checkpoint['epoch']
             best_loss = checkpoint['best_loss']
             net.train()
