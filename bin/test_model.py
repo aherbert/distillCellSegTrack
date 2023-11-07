@@ -72,11 +72,11 @@ def run(args):
     if cyto:
         # [[channel to segment, optional nuclear channel]]
         channels = [2, 1]
-        diameter = 40
+        diameter = args.diameter if args.diameter else 40
     else:
         # to segment grayscale images, input [0,0]
         channels = [0, 0]
-        diameter = 10
+        diameter = args.diameter if args.diameter else 10
 
     # Create Cellpose
     cellpose_model = os.path.abspath(args.cellpose_model) if args.cellpose_model else state['model']
@@ -237,6 +237,9 @@ if __name__ == '__main__':
     parser.add_argument('--nuclei-channel', dest='nuclei_channel', type=int,
         default=1,
         help='Nuclei channel (1-based index) (default: %(default)s)')
+    parser.add_argument('--diameter', type=float,
+        default=0,
+        help='Diameter (default: nuclei=10; cyto=40)')
     parser.add_argument('-d', '--device', dest='device',
         default='cuda',
         help='Device (default: %(default)s)')
