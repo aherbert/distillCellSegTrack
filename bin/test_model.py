@@ -249,7 +249,7 @@ if __name__ == '__main__':
         help='Threshold for true positive match (default: %(default)s)')
     group = parser.add_argument_group('Cellpose')
     group.add_argument('--batch-size', dest='batch_size', type=int,
-        default=8,
+        default=128,
         help='Batch size (default: %(default)s)')
     group.add_argument('--cellprob-threshold', dest='cellprob_threshold',
         type=float, default=0.0,
