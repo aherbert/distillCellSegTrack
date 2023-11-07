@@ -210,7 +210,8 @@ def run(args):
     #loss_fn = MapLoss(binary=False)
     # Much worse to ignore the flows
     #loss_fn = MapLoss(binary=False, channels=[2])
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
+        step_size=args.lr_step_size, gamma=args.lr_gamma)
     # Training loss is expected to go down. Stop when at an approximate plateau.
     train_stop = StoppingCriteria(patience=1, min_rel_delta=1e-2)
     # Validation loss may increase due to overtraining. This is the main
@@ -323,6 +324,12 @@ if __name__ == '__main__':
     group.add_argument('--lr', dest='learning_rate', type=float,
         default=0.01,
         help='The learning rate (default: %(default)s)')
+    group.add_argument('--lr-gamma', dest='lr_gamma', type=float,
+        default=0.5,
+        help='The learning rate scheduler gamma (default: %(default)s)')
+    group.add_argument('--lr-step', dest='lr_step_size', type=int,
+        default=50,
+        help='The learning rate scheduler step size (default: %(default)s)')
     group.add_argument('--patience', dest='patience', type=int,
         default=3,
         help='Number of times to allow for no improvement before stopping (default: %(default)s)')
