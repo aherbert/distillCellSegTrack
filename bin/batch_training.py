@@ -52,6 +52,30 @@ def run(args):
         cmd.extend(['-n', base + '.pt',
                     '-s', base + '.json'])
         out = base + '.out'
+
+        # Create a name
+        if not '--run-name' in arguments:
+            print('create run name')
+            name = []
+            for a in arguments[1:]:
+                # Detect new argument
+                if a[0] == '-':
+                    size = 0
+                    # Ignore some arguments
+                    if a in ['-d', '--device']:
+                        size -= 1
+                    else:
+                        name.append(a.lstrip('-'))
+                    continue
+                if size < 0:
+                    continue
+                if size > 0:
+                    name[-1] = name[-1] + ','
+                name[-1] = name[-1] + a
+                size += 1
+
+            cmd.extend(['--run-name', '_'.join(name)])
+
         logging.info(f'Run {cmd} > {out}')
         if args.dry_run:
             continue
