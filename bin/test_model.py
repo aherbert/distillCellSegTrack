@@ -89,7 +89,8 @@ def run(args):
         #residual_on=state['residual_on'], style_on=state['style_on'],
         #concatenation=state['concatenation'],
         device=device,
-        save_directory=tile_dir
+        save_directory=tile_dir,
+        save_times=True
     )
 
     # Create a modified Cellpose using the student model
@@ -99,7 +100,8 @@ def run(args):
         #residual_on=state['residual_on'], style_on=state['style_on'],
         #concatenation=state['concatenation'],
         device=device,
-        save_directory=tile_dir2
+        save_directory=tile_dir2,
+        save_times=True
     )
     net = CPnetX(
         nbase=state['nbase'], nout=3, sz=3,
@@ -121,8 +123,8 @@ def run(args):
 
     # Run Cellpose
     all_aji = []
-    total1 = 0
-    total2 = 0
+    total1, total1b = 0, 0
+    total2, total2b = 0, 0
     for i, image in enumerate(combined_images):
         logging.info(f'Processing image {i+1}: {image}')
         img = np.load(image)
@@ -154,7 +156,9 @@ def run(args):
             min_size=args.min_size,
         )
         t1 = time.time() - t1
+        t1b = np.array(model.reset_network_times()).sum()
         total1 += t1
+        total1b += t1b
         m1 = filter_segmentation(masks_array)
 
         # Run student model
@@ -171,9 +175,12 @@ def run(args):
             model_loaded=True
         )
         t2 = time.time() - t2
+        t2b = np.array(model2.reset_network_times()).sum()
         total2 += t2
+        total2b += t2b
         m2 = filter_segmentation(masks_array)
         logging.info(f'Time Cellpose {t1:.6f}, Student {t2:.6f} ({t2/t1:.6f})')
+        logging.info(f'Network Time Cellpose {t1b:.6f}, Student {t2b:.6f} ({t2b/t1b:.6f})')
 
         if args.save_dir:
             # Save masks
@@ -208,11 +215,13 @@ def run(args):
         # This script could compute the loss function on each batch for the
         # network outputs, and other metrics (see test_rotations.py)
 
-    t1, t2 = total1, total2
+    t1, t2, t1b, t2b = total1, total2, total1b, total2b
     logging.info('Images=%d; Match IoU: min=%.5f, max=%.5f, mean=%.5f, std=%.5f',
         len(all_aji), np.min(all_aji), np.max(all_aji),
         np.mean(all_aji), np.std(all_aji))
     logging.info(f'Time Cellpose {t1:.6f}, Student {t2:.6f} ({t2/t1:.6f})')
+    logging.info(f'Network Time Cellpose {t1b:.6f}, Student {t2b:.6f} ({t2b/t1b:.6f})')
+    logging.info(f'Non-network Time Cellpose {t1-t1b:.6f}, Student {t2-t2b:.6f} ({(t2-t2b)/(t1-t1b):.6f})')
     t = time.time() - start_time
     logging.info(f'Done (in {t} seconds)')
 

@@ -15,6 +15,7 @@
 
 import numpy as np
 import os
+import time
 import torch
 import numba as nb
 
@@ -121,6 +122,9 @@ class CellposeModelX(CellposeModel):
 
     save_styles: bool (optional, default False)
         if True, save the styles
+
+    save_times: bool (optional, default False)
+        if True, save the execution time of running the network (to network_times)
     """
 
     def __init__(self, gpu=False, pretrained_model=False,
@@ -129,7 +133,8 @@ class CellposeModelX(CellposeModel):
                     residual_on=True, style_on=True, concatenation=False,
                     nchan=2,
                     save_directory=None,
-                    save_y32=False, save_styles=False):
+                    save_y32=False, save_styles=False,
+                    save_times=False):
         super(CellposeModelX, self).__init__(
             gpu=gpu, pretrained_model=pretrained_model,
             model_type=model_type, net_avg=net_avg,
@@ -146,6 +151,8 @@ class CellposeModelX(CellposeModel):
                 raise NotADirectoryError(save_directory)
             self._save_directory = save_directory
         self._count = 1
+        self._save_times = save_times
+        self.network_times = []
 
         # The network is created in cellpose.core.UnetModel.
         # Here we replace the network with our custom version.
@@ -174,6 +181,9 @@ class CellposeModelX(CellposeModel):
         # This method is copied from the UnetModel super-class with
         # modifications to save the network input and output
 
+        if self._save_times:
+            t1 = time.time()
+
         X = self._to_device(x)
         self.net.eval()
         if self.mkldnn:
@@ -189,6 +199,9 @@ class CellposeModelX(CellposeModel):
         #if return_conv:
         #    conv = self._from_device(conv)
         #    y = np.concatenate((y, conv), axis=1)
+
+        if self._save_times:
+            self.network_times.append(time.time() - t1)
 
         # Save input/output
         if self._save_directory:
@@ -231,3 +244,17 @@ class CellposeModelX(CellposeModel):
             interp, anisotropy, do_3D, stitch_threshold);
         self.last_rescale = rescale
         return masks, styles, dP, cellprob, p
+
+    def reset_network_times(self):
+        """
+        Resets the list of network execution times. Returns the previous
+        list of times.
+
+        Returns
+        -------
+        l : list float
+            List of previously saved network execution times.
+        """
+        l = self.network_times
+        self.network_times = []
+        return l
