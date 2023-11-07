@@ -331,7 +331,7 @@ if __name__ == '__main__':
         default=100,
         help='The learning rate scheduler step size (default: %(default)s)')
     group.add_argument('--patience', dest='patience', type=int,
-        default=5,
+        default=10,
         help='Number of times to allow for no improvement before stopping (default: %(default)s)')
     group.add_argument('--delta', dest='delta', type=float,
         default=0,
