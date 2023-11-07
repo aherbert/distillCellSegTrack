@@ -380,7 +380,8 @@ if __name__ == '__main__':
         import sys
         saved = {}
         args_d = vars(args)
-        for s in ['log-level', 'epochs', 'wandb', 'device']:
+        for s in ['log-level', 'epochs', 'wandb', 'device',
+                  'patience', 'delta', 'rel-delta']:
            if '--' + s in sys.argv:
                 s = s.replace('-', '_')
                 saved[s] = args_d[s]
