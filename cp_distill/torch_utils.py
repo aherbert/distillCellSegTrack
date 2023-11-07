@@ -19,7 +19,7 @@ def optimizer_to(optim, device):
 
     Parameters
     ----------
-    optim : torch.optim
+    optim : torch.optim.Optimizer
         Optimizer.
 
     device : torch.device
