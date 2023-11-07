@@ -116,6 +116,8 @@ def run(args):
                    tags=tags,
                    config=vars(args))
         logging.info(f'Initialised wandb: {id}')
+        # Save the state file required to restart the run
+        wandb.save(args.state)
 
     # Create Cellpose network
     device = torch.device(args.device)
@@ -224,7 +226,7 @@ def run(args):
         scheduler.step()
 
     if args.wandb:
-        wandb.save(args.state)
+        # Save large files at the end
         wandb.save(checkpoint_name)
         wandb.save(checkpoint_name + '.best')
         wandb.finish()
