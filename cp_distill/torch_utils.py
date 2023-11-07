@@ -26,8 +26,6 @@ def optimizer_to(optim, device):
     device : torch.device
         Torch device.
     """
-    print(type(optim))
-    print(type(device))
     for param in optim.state.values():
         # Not sure there are any global tensors in the state dict
         if isinstance(param, torch.Tensor):
