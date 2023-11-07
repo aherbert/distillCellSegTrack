@@ -148,6 +148,7 @@ def run(args):
         # cannot train with mkldnn
         mkldnn=False,
     )
+    net = net.to(device)
 
     # Create optimizer
     # Note: Cellpose uses:
@@ -176,8 +177,6 @@ def run(args):
             logging.info(f'Loaded checkpoint: {checkpoint_name}')
         if args.existing == Existing.overwrite:
             logging.info(f'Existing checkpoint will be overwritten: {checkpoint_name}')
-
-    net = net.to(device)
 
     # Create data
     images = find_images(args.directory)
