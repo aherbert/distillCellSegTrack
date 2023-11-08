@@ -17,7 +17,7 @@ from skimage.segmentation import clear_border
 # Copied from omero_screen.general_functions
 def filter_segmentation(mask: np.ndarray) -> np.ndarray:
     """
-    removes border objects and filters large abd small objects from segmentation mask
+    removes border objects and filters large and small objects from segmentation mask
     :param mask: unfiltered segmentation mask
     :return: filtered segmentation mask
     """
