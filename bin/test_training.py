@@ -104,7 +104,6 @@ def run(args):
     start_time = time.time()
     restart = hasattr(args, 'restart')
     args.pid = os.getpid()
-    logging.info(f'Started process {args.pid}')
 
     # Weights and Biases support
     if args.wandb:
@@ -132,6 +131,8 @@ def run(args):
             logging.info(f'Initialised wandb: {wandb_id}')
             args.wandb_id = wandb_id
  
+    logging.info(f'Started process {args.pid}')
+
     if not restart:
         # Save training state
         with open(args.state, 'w') as f:
