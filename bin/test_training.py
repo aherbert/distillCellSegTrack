@@ -103,6 +103,8 @@ def run(args):
 
     start_time = time.time()
     restart = hasattr(args, 'restart')
+    args.pid = os.getdpid()
+    logging.info(f'Started process {args.pid}')
 
     # Weights and Biases support
     if args.wandb:
