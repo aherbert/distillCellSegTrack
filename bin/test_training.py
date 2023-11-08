@@ -344,7 +344,7 @@ if __name__ == '__main__':
     group.add_argument('--rel-delta', type=float,
         default=1e-4,
         help='The minimum relative change to be counted as improvement (default: %(default)s)')
-    parser.add_argument('--zero-background',
+    group.add_argument('--zero-background',
         default=False,
         action=argparse.BooleanOptionalAction,
         help='Convert the flows in the background to zero (default: %(default)s).')
