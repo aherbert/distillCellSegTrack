@@ -90,8 +90,8 @@ class CellposeLoss(torch.nn.Module):
         veci = y[:,:2]
         lbl = torch.where(y[:,2] > 0, 1.0, 0.0)
         if self._zero_background:
-            y_pred[:,0] *= lbl
-            y_pred[:,1] *= lbl
+            veci[:,0] *= lbl
+            veci[:,1] *= lbl
         loss = self.criterion(y_pred[:,:2], veci)
         loss /= 2.
         loss2 = self.criterion2(y_pred[:,2], lbl)
