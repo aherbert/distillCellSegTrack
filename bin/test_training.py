@@ -269,16 +269,16 @@ if __name__ == '__main__':
     parser.add_argument('directory', metavar='DIR',
         type=file_or_dir_path,
         help='Dataset directory, or training state file')
-    parser.add_argument('--size', dest='size', type=int,
+    parser.add_argument('--size', type=int,
         default=0,
         help='Number of tiles to use (default is all tiles)')
-    parser.add_argument('--data-seed', dest='data_seed', type=int,
+    parser.add_argument('--data-seed', type=int,
         default=42,
         help='Random seed to select data (default: %(default)s)')
     parser.add_argument('-d', '--device', dest='device',
         default='cuda',
         help='Device (default: %(default)s)')
-    parser.add_argument('--cudnn-benchmark', dest='cudnn_benchmark',
+    parser.add_argument('--cudnn-benchmark',
         default=False,
         action=argparse.BooleanOptionalAction,
         help='Run cuDNN autotuner (default: %(default)s)')
@@ -290,58 +290,58 @@ if __name__ == '__main__':
     group.add_argument('-n', '--name', dest='name', type=str,
         default='model.pt',
         help='Checkpoint name (default: %(default)s)')
-    group.add_argument('--existing', dest='existing', type=Existing,
+    group.add_argument('--existing', type=Existing,
         choices=list(Existing), default=Existing.error,
         help='Existing checkpoint option (default: %(default)s)')
-    group.add_argument('--nbase', nargs='+', dest='nbase', type=int,
+    group.add_argument('--nbase', nargs='+', type=int,
         default=[2, 32],
         help='Cellpose architecture (default: %(default)s). ' +
              '(Note: Cellpose uses [2, 32, 64, 128, 256].)')
-    group.add_argument('--residual-on', dest='residual_on',
+    group.add_argument('--residual-on',
         default=True,
         action=argparse.BooleanOptionalAction,
         help='Residual on (default: %(default)s)')
-    group.add_argument('--style-on', dest='style_on',
+    group.add_argument('--style-on',
         default=True,
         action=argparse.BooleanOptionalAction,
         help='Style on (default: %(default)s)')
-    group.add_argument('--concatenation', dest='concatenation',
+    group.add_argument('--concatenation',
         default=False,
         action=argparse.BooleanOptionalAction,
         help='Concatenation (default: %(default)s)')
 
     group = parser.add_argument_group('Training')
-    group.add_argument('--epochs', dest='epochs', type=int,
+    group.add_argument('--epochs', type=int,
         default=2000,
         help='Training epochs (default: %(default)s)')
-    group.add_argument('--batch-size', dest='batch_size', type=int,
+    group.add_argument('--batch-size', type=int,
         default=128,
         help='Batch size for the data loader (default: %(default)s)')
-    parser.add_argument('--num-workers', dest='num_workers', type=int,
+    parser.add_argument('--num-workers', type=int,
         default=8,
         help='Number of workers for asynchronous data loading (default: %(default)s)')
-    group.add_argument('--seed', dest='seed', type=int,
+    group.add_argument('--seed', type=int,
         default=0xdeadbeef,
         help='Random seed for initial model (default: %(default)s)')
-    group.add_argument('--test-size', dest='test_size', type=float,
+    group.add_argument('--test-size', type=float,
         default=0.1,
         help='Size for the test data (default: %(default)s)')
     group.add_argument('--lr', dest='learning_rate', type=float,
         default=0.01,
         help='The learning rate (default: %(default)s)')
-    group.add_argument('--lr-gamma', dest='lr_gamma', type=float,
+    group.add_argument('--lr-gamma', type=float,
         default=0.5,
         help='The learning rate scheduler gamma (default: %(default)s)')
-    group.add_argument('--lr-step', dest='lr_step_size', type=int,
+    group.add_argument('--lr-step', type=int,
         default=150,
         help='The learning rate scheduler step size (default: %(default)s)')
-    group.add_argument('--patience', dest='patience', type=int,
+    group.add_argument('--patience', type=int,
         default=10,
         help='Number of times to allow for no improvement before stopping (default: %(default)s)')
-    group.add_argument('--delta', dest='delta', type=float,
+    group.add_argument('--delta', type=float,
         default=0,
         help='The minimum absolute change to be counted as improvement (default: %(default)s)')
-    group.add_argument('--rel-delta', dest='rel_delta', type=float,
+    group.add_argument('--rel-delta', type=float,
         default=1e-4,
         help='The minimum relative change to be counted as improvement (default: %(default)s)')
     parser.add_argument('--zero-background',
@@ -350,7 +350,7 @@ if __name__ == '__main__':
         help='Convert the flows in the background to zero (default: %(default)s).')
 
     group = parser.add_argument_group('Misc')
-    group.add_argument('--log-level', dest='log_level', type=int,
+    group.add_argument('--log-level', type=int,
         default=20,
         help='Log level (default: %(default)s). WARNING=30; INFO=20; DEBUG=10')
     parser.add_argument('--wandb',
@@ -358,17 +358,17 @@ if __name__ == '__main__':
         action=argparse.BooleanOptionalAction,
         help='Log to Weights and Biases (default: %(default)s).' +
           ' Must be logged in, else works offline.')
-    group.add_argument('--entity', dest='entity', type=none_or_str,
+    group.add_argument('--entity', type=none_or_str,
         default='cellpose-distill',
         help='Weights and Biases team (default: %(default)s)')
-    group.add_argument('--project', dest='project', type=str,
+    group.add_argument('--project', type=str,
         default='cellpose-distill',
         help='Weights and Biases project (default: %(default)s)')
-    group.add_argument('--run-name', dest='run_name', type=str,
+    group.add_argument('--run-name', type=str,
         help='Weights and Biases run display name')
     group.add_argument('--tags', nargs='+', default=[],
         help='Weights and Biases tags')
-    group.add_argument('--wandb-id', dest='wandb_id', type=str,
+    group.add_argument('--wandb-id', type=str,
         help='Weights and Biases ID (overrides generated/saved state id)')
 
     args = parser.parse_args()

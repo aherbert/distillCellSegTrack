@@ -92,7 +92,7 @@ if __name__ == '__main__':
 
     parser.add_argument('batch', metavar='BATCH', type=file_path,
         help='Batch arguments file')
-    parser.add_argument('--dry-run', dest='dry_run',
+    parser.add_argument('--dry-run',
         default=False, action=argparse.BooleanOptionalAction,
         help='Perform a dry run (default: %(default)s)')
 

@@ -240,10 +240,10 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--cellpose-model', dest='cellpose_model',
         type=file_path,
         help='CellPose model file (override the model path in the state file)')
-    parser.add_argument('--cyto-channel', dest='cyto_channel', type=int,
+    parser.add_argument('--cyto-channel', type=int,
         default=2,
         help='Cytoplasm channel (1-based index) (default: %(default)s)')
-    parser.add_argument('--nuclei-channel', dest='nuclei_channel', type=int,
+    parser.add_argument('--nuclei-channel', type=int,
         default=1,
         help='Nuclei channel (1-based index) (default: %(default)s)')
     parser.add_argument('--diameter', type=float,
@@ -254,19 +254,19 @@ if __name__ == '__main__':
         help='Device (default: %(default)s)')
     parser.add_argument('-s', '--save', dest='save_dir', type=str,
         help='Save directory')
-    parser.add_argument('--save-tiles', dest='save_tiles', action='store_true',
+    parser.add_argument('--save-tiles', action='store_true',
         help='Save network input/output tiles')
     parser.add_argument('--threshold', nargs='+', type=float,
         default=[0.5, 0.75, 0.9],
         help='Threshold for true positive match (default: %(default)s)')
     group = parser.add_argument_group('Cellpose')
-    group.add_argument('--batch-size', dest='batch_size', type=int,
+    group.add_argument('--batch-size', type=int,
         default=128,
         help='Batch size (default: %(default)s)')
-    group.add_argument('--cellprob-threshold', dest='cellprob_threshold',
+    group.add_argument('--cellprob-threshold',
         type=float, default=0.0,
         help='Cell probability threshold (default: %(default)s)')
-    group.add_argument('--flow-threshold', dest='flow_threshold', type=float,
+    group.add_argument('--flow-threshold', type=float,
         default=0.4,
         help='Flow threshold (default: %(default)s)' +
         ' (for the match between predicted flows and mask flows).' +
@@ -274,7 +274,7 @@ if __name__ == '__main__':
     group.add_argument('--interp', default=True,
         action=argparse.BooleanOptionalAction,
         help='Interpolate flows')
-    group.add_argument('--min-size', dest='min_size', type=int,
+    group.add_argument('--min-size', type=int,
         default=15,
         help='Minimum object size')
 

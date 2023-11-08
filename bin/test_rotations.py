@@ -229,10 +229,10 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--model', dest='model', type=file_path,
         default=cellpose_model,
         help='CellPose model (default: %(default)s)')
-    parser.add_argument('--cyto-channel', dest='cyto_channel', type=int,
+    parser.add_argument('--cyto-channel', type=int,
         default=2,
         help='Cytoplasm channel (1-based index) (default: %(default)s)')
-    parser.add_argument('--nuclei-channel', dest='nuclei_channel', type=int,
+    parser.add_argument('--nuclei-channel', type=int,
         default=1,
         help='Nuclei channel (1-based index) (default: %(default)s)')
     parser.add_argument('-d', '--device', dest='device',
@@ -240,7 +240,7 @@ if __name__ == '__main__':
         help='Device (default: %(default)s)')
     parser.add_argument('-s', '--save', dest='save_dir', type=dir_path,
         help='Save directory prefix (default: %(default)s)')
-    parser.add_argument('--rotate-saved', dest='rotate_saved',
+    parser.add_argument('--rotate-saved',
         default=True,
         action=argparse.BooleanOptionalAction,
         help='Rotate back before save, otherwise save the original rotated output (default: %(default)s)')
@@ -248,7 +248,7 @@ if __name__ == '__main__':
         default=False,
         action=argparse.BooleanOptionalAction,
         help='Perform an all-vs-all matching on the output flows and 32-channel layers (default: %(default)s)')
-    parser.add_argument('--log-level', dest='log_level', type=int,
+    parser.add_argument('--log-level', type=int,
         default=20,
         help='Log level (default: %(default)s). WARNING=30; INFO=20; DEBUG=10')
 
