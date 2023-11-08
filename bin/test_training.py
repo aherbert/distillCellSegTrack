@@ -200,10 +200,10 @@ def run(args):
     use_gpu = device.type == 'cuda'
     train_loader = DataLoader(CPDataset(y, args.directory, load_y32=False),
         batch_size=args.batch_size, num_workers=args.num_workers,
-        pin_memory=use_gpu)
+        pin_memory=use_gpu, pin_memory_device=device)
     validation_loader = DataLoader(CPDataset(z, args.directory, load_y32=False),
         batch_size=args.batch_size, num_workers=args.num_workers,
-        pin_memory=use_gpu)
+        pin_memory=use_gpu, pin_memory_device=device)
 
     # Create training objects
     loss_fn = CellposeLoss()
