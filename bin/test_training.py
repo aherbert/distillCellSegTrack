@@ -198,12 +198,13 @@ def run(args):
 
     # Loss function does not use y32
     use_gpu = device.type == 'cuda'
+    pin_memory_device = args.device if use_gpu else ''
     train_loader = DataLoader(CPDataset(y, args.directory, load_y32=False),
         batch_size=args.batch_size, num_workers=args.num_workers,
-        pin_memory=use_gpu, pin_memory_device=device)
+        pin_memory=use_gpu, pin_memory_device=pin_memory_device)
     validation_loader = DataLoader(CPDataset(z, args.directory, load_y32=False),
         batch_size=args.batch_size, num_workers=args.num_workers,
-        pin_memory=use_gpu, pin_memory_device=device)
+        pin_memory=use_gpu, pin_memory_device=pin_memory_device)
 
     # Create training objects
     loss_fn = CellposeLoss()
