@@ -207,7 +207,7 @@ def run(args):
         pin_memory=use_gpu, pin_memory_device=pin_memory_device)
 
     # Create training objects
-    loss_fn = CellposeLoss()
+    loss_fn = CellposeLoss(zero_background=args.zero_background)
     # Worse using BCE on the flows. They must have the same magnitude.
     #loss_fn = MapLoss(binary=True)
     # Worse if the target is not binary
@@ -344,6 +344,10 @@ if __name__ == '__main__':
     group.add_argument('--rel-delta', dest='rel_delta', type=float,
         default=1e-4,
         help='The minimum relative change to be counted as improvement (default: %(default)s)')
+    parser.add_argument('--zero-background',
+        default=False,
+        action=argparse.BooleanOptionalAction,
+        help='Convert the flows in the background to zero (default: %(default)s).')
 
     group = parser.add_argument_group('Misc')
     group.add_argument('--log-level', dest='log_level', type=int,

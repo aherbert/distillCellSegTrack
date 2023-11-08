@@ -59,17 +59,24 @@ class MapLoss(torch.nn.Module):
         return F.binary_cross_entropy_with_logits(y_pred, s, reduction='mean')
 
 class CellposeLoss(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, zero_background=False):
         """
         Create a loss function using the Cellpose map/flow output.
         Uses binary cross entropy with logits for the map.
         Uses mse_loss for the flows.
+
+        Parameters
+        ----------
+        binary : boolean (optional, default False)
+            Convert the flows in the background to zero
+            (outside the probability map).
 
         Returns
         -------
         An instance.
         """
         super(CellposeLoss, self).__init__()
+        self._zero_background = zero_background
         # Based on cellpose.core.UnetModel._set_criterion
         self.criterion  = nn.MSELoss(reduction='mean')
         self.criterion2 = nn.BCEWithLogitsLoss(reduction='mean')
@@ -82,6 +89,9 @@ class CellposeLoss(torch.nn.Module):
         # factor: veci = 5. * y[:,:2]
         veci = y[:,:2]
         lbl = torch.where(y[:,2] > 0, 1.0, 0.0)
+        if self._zero_background:
+            y_pred[:,0] *= lbl
+            y_pred[:,1] *= lbl
         loss = self.criterion(y_pred[:,:2], veci)
         loss /= 2.
         loss2 = self.criterion2(y_pred[:,2], lbl)
