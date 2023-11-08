@@ -238,6 +238,7 @@ def run(args):
             'epoch': epoch,
             'model_state_dict': net.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
+            'train_loss': train_loss,
             'loss': val_loss,
             'best_loss': best_loss,
             }, checkpoint_name)

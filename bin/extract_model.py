@@ -63,8 +63,9 @@ def run(args):
         state[k] = training[k]
     for k in ['model', 'cyto']:
         state[k] = dataset[k]
-    for k in ['epoch', 'loss']:
-        state[k] = checkpoint[k]
+    for k in ['epoch', 'loss', 'train_loss']:
+        # Silently handle missing checkpoint data
+        state[k] = checkpoint.get(k)
 
     s = json.dumps(state, indent=2)
     logging.info(f'Model state: {s}')
