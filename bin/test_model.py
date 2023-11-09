@@ -276,7 +276,7 @@ if __name__ == '__main__':
         help='Interpolate flows')
     group.add_argument('--min-size', type=int,
         default=15,
-        help='Minimum object size')
+        help='Minimum object size (default: %(default)s)')
 
     args = parser.parse_args()
     run(args)
