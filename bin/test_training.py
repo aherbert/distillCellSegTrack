@@ -212,7 +212,7 @@ def run(args):
         batch_size=args.batch_size, num_workers=args.num_workers,
         pin_memory=use_gpu, pin_memory_device=pin_memory_device)
     
-    test_data = CPTestingDataset(tiles, args.directory) if tiles else None
+    test_data = CPTestingDataset(tiles, args.directory) if len(tiles) else None
     test_interval = np.max([1, args.testing_interval])
 
     # Create training objects
