@@ -375,7 +375,7 @@ if __name__ == '__main__':
         default=0,
         help='Testing size (default is all testing images); -1=Disable')
     group.add_argument('--testing-interval', type=int,
-        default=10,
+        default=5,
         help='Testing interval (default: %(default)s)')
 
     group = parser.add_argument_group('Misc')
