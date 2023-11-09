@@ -38,7 +38,7 @@ def run(args):
     viewer = napari.Viewer()
     for f in images:
         image = np.load(f)
-        axis = None if image.ndim == 2 else 0
+        axis = None if image.ndim == 2 else args.axis
         viewer.add_image(image, name=os.path.basename(f),
                          channel_axis=axis, blending='additive')
     napari.run()
@@ -51,6 +51,9 @@ if __name__ == '__main__':
     parser.add_argument('image', nargs='+', metavar='IMAGE',
         type=file_path,
         help='image')
+    parser.add_argument('--axis', type=int,
+        default=0,
+        help='Channel axis for ND images (default: %(default)s)')
 
     args = parser.parse_args()
     run(args)
