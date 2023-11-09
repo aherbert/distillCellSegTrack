@@ -20,7 +20,6 @@ from cp_distill.image_utils import filter_segmentation
 import warnings
 
 def test_network(net, test_data, device, batch_size,
-                 niter=200, 
                  cellprob_threshold=0.0,
                  flow_threshold=0.4, interp=True,
                  min_size=15):
@@ -37,6 +36,15 @@ def test_network(net, test_data, device, batch_size,
         Torch device. The network model must be loaded to the same device.
     batch_size : int
         Batch size.
+    cellprob_threshold: float (optional, default 0.0) 
+        all pixels with value above threshold kept for masks, decrease to find more and larger masks
+    flow_threshold: float (optional, default 0.4)
+        flow error threshold (all cells with errors below threshold are kept)
+    interp: bool (optional, default True)
+        interpolate during 2D dynamics
+        (in previous versions it was False)
+    min_size: int (optional, default 15)
+        minimum number of pixels per mask, can turn off with -1
 
     Returns
     -------
@@ -54,7 +62,7 @@ def test_network(net, test_data, device, batch_size,
         # cellpose.core.UnetModel._run_net: to pad the image
         # cellpose.core.UnetModel._run_tiled: to make tiles
         
-        orig_dim, slc, tile_dim, ysub, xsub, Ly, Lx = data
+        orig_dim, rescale, slc, tile_dim, ysub, xsub, Ly, Lx = data
         # From cellpose.core.UnetModel._run_tiled
         n, nchan, ly, lx = IMG.shape
         niter = int(np.ceil(IMG.shape[0] / batch_size))
@@ -70,9 +78,9 @@ def test_network(net, test_data, device, batch_size,
             # cellpose.core.UnetModel._from_device
             y0 = y0.detach().cpu().numpy()
             y[irange] = y0.reshape(irange.stop-irange.start, y0.shape[-3], y0.shape[-2], y0.shape[-1])
-        
+
         y = average_tiles(y, ysub, xsub, Ly, Lx)
-        # Here we reconstrut the size of the image before calling make_tiles
+        # Here we reconstruct the size of the image before calling make_tiles
         y = y[:,:tile_dim[0],:tile_dim[1]]
         
         # From cellpose.core.UnetModel._run_net
@@ -80,11 +88,12 @@ def test_network(net, test_data, device, batch_size,
         y = y[slc]
         # transpose so channels axis is last again
         y = np.transpose(y, (1,2,0))
-        
+
         # From cellpose.models.CellposeModel._run_cp
         y = resize_image(y, orig_dim[0], orig_dim[1])
         cellprob = y[:,:,2]
         dP = y[:,:,:2].transpose((2,0,1))
+        niter = (1 / rescale * 200)
         masks_array, _ = compute_masks(dP, cellprob, niter=niter,
             cellprob_threshold=cellprob_threshold,
             flow_threshold=flow_threshold, interp=interp, 

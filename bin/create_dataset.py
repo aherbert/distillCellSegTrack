@@ -128,13 +128,15 @@ def run(args):
             elif img.ndim != 2:
                 raise Exception('{image} requires 1 channel')
 
-        # Do rotations
+        # Do rotations. Save the first rotation for the testing data.
+        imgs = None
         for k in args.rotations:
             logging.info(f'Processing rotation {k} on {i+1}: {image}')
 
             start = segmentation_model._count
+            rotated = np.rot90(img, k=k, axes=(0, 1))
             masks_array, flows, styles = segmentation_model.eval(
-                np.rot90(img, k=k, axes=(0, 1)),
+                rotated,
                 channels=channels,
                 batch_size=args.batch_size,
                 diameter=diameter, normalize=False
@@ -142,14 +144,16 @@ def run(args):
             logging.info(f'Saved {save_directory}: {start}-{segmentation_model._count - 1}')
 
             # Create validation data
-            if k == 0:
+            if imgs == None:
                 orig_dim = img.shape[:2] if args.cyto else img.shape
-                imgs = resize_image(img, rsz=segmentation_model.last_rescale,
+                rescale = segmentation_model.last_rescale
+                imgs = resize_image(rotated, rsz=rescale,
                     no_channels=not args.cyto)
                 logging.log(15, 'Resized %s to %s', img.shape, imgs.shape)
                 # From cellpose.core.UnetModel._run_net
-                # Make image nchan x Ly x Lx for net
-                imgs = np.transpose(imgs, (2,0,1)) if args.cyto else imgs[np.newaxis, ...]
+                # Make image nchan x Ly x Lx for net.
+                # Put the channel to segment first (assume cyto channels = [2, 1])
+                imgs = np.transpose(imgs[..., [1, 0]], (2,0,1)) if args.cyto else imgs[np.newaxis, ...]
                 # pad image for net so Ly and Lx are divisible by 16
                 imgs, ysub, xsub = pad_image_ND(imgs)
                 # slices from padding
@@ -171,7 +175,7 @@ def run(args):
                 np.save(os.path.join(save_directory, f'tiles_{i+1}.npy'), tiles)
                 np.save(os.path.join(save_directory, f'mask_{i+1}.npy'), m1)
                 with open(os.path.join(save_directory, f'tiles_{i+1}.pkl'), 'wb') as f:
-                    pickle.dump((orig_dim, slc, tile_dim, ysub, xsub, Ly, Lx), f)
+                    pickle.dump((orig_dim, rescale, slc, tile_dim, ysub, xsub, Ly, Lx), f)
                 logging.info(f'Saved validation tiles {save_directory}: {i+1} {tiles.shape}')
 
             if not args.compute_flows:
