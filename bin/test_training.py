@@ -90,9 +90,10 @@ def run(args):
     import torch
     import shutil
     from torch.utils.data import DataLoader
-    from cp_distill.datasets import find_images, CPDataset
+    from cp_distill.datasets import find_images, CPDataset, CPTestingDataset
     from cp_distill.cellpose_ext import CPnetX
     from cp_distill.training import CellposeLoss, train_epoch
+    from cp_distill.testing import test_network
     from sklearn.model_selection import train_test_split
     if args.wandb:
         import wandb
@@ -187,16 +188,21 @@ def run(args):
 
     # Create data
     images = find_images(args.directory)
-    logging.info(f'Processing dataset: {args.directory} : tiles = {len(images)}')
+    tiles = find_images(args.directory, prefix='tiles')
     size = len(images)
+    tsize = len(tiles)
+    logging.info(f'Processing dataset: {args.directory} : tiles = {size}, test images = {tsize}')
     if args.size > 0:
         size = np.min([size, args.size])
+    if args.testing_size != 0:
+        tsize = np.min([tsize, args.testing_size])
     rng = np.random.default_rng(seed=args.data_seed)
     y, z = train_test_split(rng.choice(images, size, replace=False),
                             test_size=args.test_size, shuffle=False)
-    logging.info(f'Size train {len(y)} : validation {len(z)}')
+    tiles = rng.choice(tiles, tsize, replace=False) if tsize > 0 else []
+    logging.info(f'Size train {len(y)} : validation {len(z)} : test {len(tiles)}')
 
-    # Loss function does not use y32
+    # Note: Loss function does not use y32
     use_gpu = device.type == 'cuda'
     pin_memory_device = args.device if use_gpu else ''
     train_loader = DataLoader(CPDataset(y, args.directory, load_y32=False),
@@ -205,6 +211,9 @@ def run(args):
     validation_loader = DataLoader(CPDataset(z, args.directory, load_y32=False),
         batch_size=args.batch_size, num_workers=args.num_workers,
         pin_memory=use_gpu, pin_memory_device=pin_memory_device)
+    
+    test_data = CPTestingDataset(tiles, args.directory) if tiles else None
+    test_interval = np.max([1, args.testing_interval])
 
     # Create training objects
     loss_fn = CellposeLoss(zero_background=args.zero_background)
@@ -235,20 +244,32 @@ def run(args):
         if val_loss < best_loss:
             best_loss = val_loss
             better = True
-        torch.save({
-            'epoch': epoch,
+        stop = train_stop.check(train_loss) and val_stop.check(val_loss)
+        d = {'epoch': epoch,
             'model_state_dict': net.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
             'train_loss': train_loss,
             'loss': val_loss,
-            'best_loss': best_loss,
-            }, checkpoint_name)
+            'best_loss': best_loss}
+        aji = None
+        if test_data and (stop or (i+1) == args.epochs or (i+1) % test_interval == 0):
+            aji = test_network(net, test_data, device, args.batch_size)
+            d['iou'] = aji
+        torch.save(d, checkpoint_name)
         if better:
             shutil.copy2(checkpoint_name, checkpoint_name + '.best')
-        logging.info('[%d] Loss train %s : validation %s', epoch, train_loss, val_loss)
+        if not aji is None:
+            logging.info('[%d] Loss train %s : validation %s : IoU %s', epoch,
+                train_loss, val_loss, np.mean(aji))
+        else:
+            logging.info('[%d] Loss train %s : validation %s', epoch, train_loss, val_loss)
         if args.wandb:
-            wandb.log({'train_loss': train_loss, 'val_loss': val_loss})
-        if train_stop.check(train_loss) and val_stop.check(val_loss):
+            d = {'train_loss': train_loss, 'val_loss': val_loss}
+            if not aji is None:
+                d['iou'] = aji
+                d['mean_iou'] = np.mean(aji)
+            wandb.log(d)
+        if stop:
             logging.info('[%d] Stopping due to no improvement', epoch)
             break
         scheduler.step()
@@ -347,7 +368,15 @@ if __name__ == '__main__':
     group.add_argument('--zero-background',
         default=False,
         action=argparse.BooleanOptionalAction,
-        help='Convert the flows in the background to zero (default: %(default)s).')
+        help='Convert the flows in the background to zero (default: %(default)s)')
+
+    group = parser.add_argument_group('Testing')
+    group.add_argument('--testing-size', type=int,
+        default=0,
+        help='Testing size (default is all testing images); -1=Disable')
+    group.add_argument('--testing-interval', type=int,
+        default=10,
+        help='Testing interval (default: %(default)s)')
 
     group = parser.add_argument_group('Misc')
     group.add_argument('--log-level', type=int,

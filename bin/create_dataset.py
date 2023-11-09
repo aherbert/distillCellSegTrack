@@ -25,8 +25,10 @@ def run(args):
     import torch
     import shutil
     import json
+    import pickle
     import cv2
     from cp_distill.cellpose_ext import CellposeModelX
+    from cp_distill.image_utils import filter_segmentation
     from cellpose.dynamics import masks_to_flows
     from cellpose.transforms import make_tiles, resize_image, pad_image_ND
 
@@ -34,7 +36,7 @@ def run(args):
     if args.memory:
         logging.basicConfig(
             format='[%(asctime)s] %(levelname)s - %(mem)s - %(message)s',
-            level=logging.INFO)
+            level=args.log_level)
 
         old_factory = logging.getLogRecordFactory()
 
@@ -49,7 +51,7 @@ def run(args):
     else:
         logging.basicConfig(
             format='[%(asctime)s] %(levelname)s - %(message)s',
-            level=logging.INFO)
+            level=args.log_level)
 
     start_time = time.time()
 
@@ -120,13 +122,11 @@ def run(args):
             if img.ndim != 3:
                 raise Exception('{image} requires 2 channels')
             img = np.dstack([img[args.nuclei_channel-1], img[args.cyto_channel-1]])
-            axes = (1, 2)
         else:
             if img.ndim == 3:
                 img = img[args.nuclei_channel-1]
             elif img.ndim != 2:
                 raise Exception('{image} requires 1 channel')
-            axes = (0, 1)
 
         # Do rotations
         for k in args.rotations:
@@ -134,12 +134,46 @@ def run(args):
 
             start = segmentation_model._count
             masks_array, flows, styles = segmentation_model.eval(
-                np.rot90(img, k=k, axes=axes),
+                np.rot90(img, k=k, axes=(0, 1)),
                 channels=channels,
                 batch_size=args.batch_size,
                 diameter=diameter, normalize=False
             )
             logging.info(f'Saved {save_directory}: {start}-{segmentation_model._count - 1}')
+
+            # Create validation data
+            if k == 0:
+                orig_dim = img.shape[:2] if args.cyto else img.shape
+                imgs = resize_image(img, rsz=segmentation_model.last_rescale,
+                    no_channels=not args.cyto)
+                logging.log(15, 'Resized %s to %s', img.shape, imgs.shape)
+                # From cellpose.core.UnetModel._run_net
+                # Make image nchan x Ly x Lx for net
+                imgs = np.transpose(imgs, (2,0,1)) if args.cyto else imgs[np.newaxis, ...]
+                # pad image for net so Ly and Lx are divisible by 16
+                imgs, ysub, xsub = pad_image_ND(imgs)
+                # slices from padding
+                slc = []
+                # Modified here for a single 2D input image.
+                slc.append(slice(0, segmentation_model.nclasses + 1))
+                slc.append(slice(ysub[0], ysub[-1]+1))
+                slc.append(slice(xsub[0], xsub[-1]+1))
+                slc = tuple(slc)
+                
+                # From cellpose.core.UnetModel._run_tiled
+                tile_dim = imgs.shape[1:]
+                tiles, ysub, xsub, Ly, Lx = make_tiles(imgs)
+                ny, nx, nchan, ly, lx = tiles.shape
+                tiles = np.reshape(tiles, (ny*nx, nchan, ly, lx))
+                
+                m1 = filter_segmentation(masks_array)
+                # Save
+                np.save(os.path.join(save_directory, f'tiles_{i+1}.npy'), tiles)
+                np.save(os.path.join(save_directory, f'mask_{i+1}.npy'), m1)
+                with open(os.path.join(save_directory, f'tiles_{i+1}.pkl'), 'wb') as f:
+                    pickle.dump((orig_dim, slc, tile_dim, ysub, xsub, Ly, Lx), f)
+                logging.info(f'Saved validation tiles {save_directory}: {i+1} {tiles.shape}')
+
             if not args.compute_flows:
                 continue
             logging.info('Computing flows')
@@ -241,6 +275,9 @@ if __name__ == '__main__':
         action=argparse.BooleanOptionalAction,
         help='Scale the predicted mask before computing flows, otherwise' +
             ' scale the computed flows (default: %(default)s)')
+    parser.add_argument('--log-level', type=int,
+        default=20,
+        help='Log level (default: %(default)s). WARNING=30; INFO=20; DEBUG=10')
 
     args = parser.parse_args()
     args.model = os.path.abspath(args.model)

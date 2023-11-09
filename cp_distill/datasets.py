@@ -17,30 +17,34 @@ import os
 import re
 import glob
 import numpy as np
+import pickle
 from torch import from_numpy
 from torch.utils.data import Dataset
 
-def find_images(directory):
+def find_images(directory, prefix='input'):
     """
     Find all the images in a dataset directory. Images are identified using
-    the input tile name:
+    the name:
 
-    input_N.npy: input tile
+    prefix_N.npy: image tile
 
-    where N is the image number.
+    where prefix is the image prefix; and N is the image number.
 
     Parameters
     ----------
     directory : pathname
         Dataset directory.
 
+    prefix : str
+        Image prefix.
+
     Returns
     -------
     List of image numbers.
     """
-    pattern = re.compile(r".*input_(\d+).npy")
+    pattern = re.compile(r'.*' + prefix + r'_(\d+).npy')
     images = []
-    for filename in glob.glob(os.path.join(directory, 'input_*.npy')):
+    for filename in glob.glob(os.path.join(directory, prefix + '_*.npy')):
         result = pattern.match(filename)
         if result:
             images.append(int(result.group(1)))
@@ -62,6 +66,8 @@ class CPDataset(Dataset):
 
     Note: The input tiles are padded with a zero array if they are greyscale
     images to create a 2 channel input.
+
+    Data are returned as torch Tensors.
 
     Parameters
     -------------------
@@ -104,3 +110,53 @@ class CPDataset(Dataset):
             # Note: No noticeable benefit from caching this
             x = np.array([x, np.zeros(x.shape, dtype=np.float32)])
         return from_numpy(x), from_numpy(y), from_numpy(y32)
+
+# Load Cellpose tiled images from a directory.
+class CPTestingDataset(Dataset):
+    """
+    Dynamically load images from a directory. Images are input
+    tiles to the Cellpose network:
+
+    tiles_N.npy: input tile (N x ch x Y x X) [target, nuclei]
+    tiles_N.pkl: Pickled data used to reconstruct the image from network output
+    mask_N.npy: Cellpose output mask
+
+    where N is the image number.
+
+    Note: The input tiles are padded with a zero array if they are nuclei
+    images to create a 2 channel input.
+
+    The image data are numpy arrays and the data used to reconstruct the
+    output image is returned as a tuple.
+
+    Parameters
+    -------------------
+
+    images: list of image numbers
+        Image numbers
+
+    image_directory: str
+        Image directory
+    """
+    def __init__(self, images, image_directory):
+        self._images = np.array(images).reshape(-1)
+        self._directory = image_directory
+        if len(images) == 0:
+            raise Exception("No image numbers provided")
+
+    def __len__(self):
+        return len(self._images)
+
+    def __getitem__(self, idx):
+        n = self._images[idx]
+        # No validation on inputs
+        x = np.load(os.path.join(self._directory, f'tiles_{n}.npy'))
+        m = np.load(os.path.join(self._directory, f'mask_{n}.npy'))
+        with open(os.path.join(self._directory, f'tiles_{n}.pkl'), 'rb') as f:
+            y = pickle.load(f)
+
+        # Pad greyscale images to 2 channels
+        if x.shape[1] == 1:
+            x = np.repeat(x, 2, axis=1)
+            x[:,1] = 0
+        return x, y, m
