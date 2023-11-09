@@ -144,7 +144,7 @@ def run(args):
             logging.info(f'Saved {save_directory}: {start}-{segmentation_model._count - 1}')
 
             # Create validation data
-            if imgs == None:
+            if imgs is None:
                 orig_dim = img.shape[:2] if args.cyto else img.shape
                 rescale = segmentation_model.last_rescale
                 imgs = resize_image(rotated, rsz=rescale,
