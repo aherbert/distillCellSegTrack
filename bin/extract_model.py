@@ -65,7 +65,8 @@ def run(args):
         state[k] = dataset[k]
     for k in ['epoch', 'loss', 'train_loss', 'iou']:
         # Silently handle missing checkpoint data
-        state[k] = checkpoint.get(k)
+        if k in checkpoint:
+            state[k] = checkpoint[k]
 
     d = state.copy()
     if 'iou' in d:
