@@ -162,7 +162,7 @@ def run(args):
     # UnetModel._train_net has a default learning_rate=0.2
     epoch = 0
     optimizer = torch.optim.Adam(net.parameters(), lr=args.learning_rate,
-        betas=(0.95, 0.999))
+        betas=(0.95, 0.999), weight_decay=args.weight_decay)
     best_loss = 1e300
 
     # Use existing checkpoint
@@ -379,6 +379,9 @@ if __name__ == '__main__':
     group.add_argument('--rel-delta', type=float,
         default=1e-4,
         help='The minimum relative change to be counted as improvement (default: %(default)s)')
+    group.add_argument('--weight-decay', type=float,
+        default=0,
+        help='The weight decay for Adam optimizer (default: %(default)s)')
     group.add_argument('--zero-background',
         default=False,
         action=argparse.BooleanOptionalAction,
