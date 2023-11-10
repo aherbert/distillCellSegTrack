@@ -235,6 +235,8 @@ def run(args):
     if use_gpu and args.cudnn_benchmark:
         torch.backends.cudnn.benchmark = True
 
+    checkpoint_name_best = checkpoint_name + '.best'
+
     for i in range(args.epochs):
         epoch += 1
         train_loss, val_loss = \
@@ -252,12 +254,12 @@ def run(args):
             'loss': val_loss,
             'best_loss': best_loss}
         aji = None
-        if test_data and (stop or (i+1) == args.epochs or (i+1) % test_interval == 0):
+        if test_data and (i+1) % test_interval == 0:
             aji = test_network(net, test_data, device, args.batch_size)
             d['iou'] = aji
         torch.save(d, checkpoint_name)
         if better:
-            shutil.copy2(checkpoint_name, checkpoint_name + '.best')
+            shutil.copy2(checkpoint_name, checkpoint_name_best)
         if not aji is None:
             logging.info('[%d] Loss train %s : validation %s : IoU %s', epoch,
                 train_loss, val_loss, np.mean(aji))
@@ -274,10 +276,22 @@ def run(args):
             break
         scheduler.step()
 
+    # Ensure best model has IoU computed
+    checkpoint = torch.load(checkpoint_name_best, map_location=device)
+    if test_data and not 'iou' in checkpoint:
+        logging.info('[%d] Computing IoU on best model', epoch)
+        net.load_state_dict(checkpoint['model_state_dict'])
+        net = net.to(device)
+        checkpoint['iou'] = test_network(net, test_data, device, args.batch_size)
+        torch.save(checkpoint, checkpoint_name_best)
+    logging.info('[%d] Best model : Loss train %s : validation %s : IoU %s', 
+        checkpoint['epoch'],
+        checkpoint['train_loss'], checkpoint['loss'], np.mean(checkpoint['iou']))
+
     if args.wandb:
         # Save large files at the end
         wandb.save(checkpoint_name)
-        wandb.save(checkpoint_name + '.best')
+        wandb.save(checkpoint_name_best)
         wandb.finish()
     t = time.time() - start_time
     logging.info(f'Done (in {t:.6g} seconds)')
@@ -419,7 +433,8 @@ if __name__ == '__main__':
         saved = {}
         args_d = vars(args)
         for s in ['log-level', 'epochs', 'wandb', 'device',
-                  'patience', 'delta', 'rel-delta']:
+                  'patience', 'delta', 'rel-delta',
+                  'testing-size', 'testing-interval']:
            if '--' + s in sys.argv:
                 s = s.replace('-', '_')
                 saved[s] = args_d[s]
