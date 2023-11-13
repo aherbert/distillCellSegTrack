@@ -28,7 +28,11 @@ def run(args):
     device = torch.device(args.device)
     if not args.file:
         logging.info(f'Loading model state: {args.model}')
-        state = torch.load(args.model, map_location=device)
+        try:
+            state = torch.load(args.model, map_location=device)
+        except Exception as e:
+            logging.error(f'Failed to load model: {e}')
+            exit(1)
         del state['model_state_dict']
         s = json.dumps(state, indent=2)
         logging.info(f'Model state: {s}')
