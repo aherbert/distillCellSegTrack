@@ -380,7 +380,7 @@ if __name__ == '__main__':
         default=1e-4,
         help='The minimum relative change to be counted as improvement (default: %(default)s)')
     group.add_argument('--weight-decay', type=float,
-        default=0,
+        default=0.00001,
         help='The weight decay for Adam optimizer (default: %(default)s)')
     group.add_argument('--zero-background',
         default=False,
