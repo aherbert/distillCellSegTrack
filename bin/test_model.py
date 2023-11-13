@@ -90,7 +90,8 @@ def run(args):
         #concatenation=state['concatenation'],
         device=device,
         save_directory=tile_dir,
-        save_times=True
+        save_times=True,
+        bsize=args.tile_size
     )
 
     # Create a modified Cellpose using the student model
@@ -101,7 +102,8 @@ def run(args):
         #concatenation=state['concatenation'],
         device=device,
         save_directory=tile_dir2,
-        save_times=True
+        save_times=True,
+        bsize=args.tile_size
     )
     net = CPnetX(
         nbase=state['nbase'], nout=3, sz=3,
@@ -263,6 +265,9 @@ if __name__ == '__main__':
     group.add_argument('--batch-size', type=int,
         default=128,
         help='Batch size (default: %(default)s)')
+    parser.add_argument('--tile-size', type=int,
+        default=224,
+        help='Tile size (default: %(default)s). Use zero to disable tiles.')
     group.add_argument('--cellprob-threshold',
         type=float, default=0.0,
         help='Cell probability threshold (default: %(default)s)')
