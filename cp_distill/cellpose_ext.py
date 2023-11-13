@@ -125,6 +125,9 @@ class CellposeModelX(CellposeModel):
 
     save_times: bool (optional, default False)
         if True, save the execution time of running the network (to network_times)
+
+    bsize: int (optional, default 224)
+        size of tiles to use in pixels [bsize x bsize]
     """
 
     def __init__(self, gpu=False, pretrained_model=False,
@@ -134,7 +137,8 @@ class CellposeModelX(CellposeModel):
                     nchan=2,
                     save_directory=None,
                     save_y32=False, save_styles=False,
-                    save_times=False):
+                    save_times=False,
+                    bsize=224):
         super(CellposeModelX, self).__init__(
             gpu=gpu, pretrained_model=pretrained_model,
             model_type=model_type, net_avg=net_avg,
@@ -153,6 +157,9 @@ class CellposeModelX(CellposeModel):
         self._count = 1
         self._save_times = save_times
         self.network_times = []
+        # Control tiling
+        self._tile = bsize > 0
+        self._bsize = bsize
 
         # The network is created in cellpose.core.UnetModel.
         # Here we replace the network with our custom version.
@@ -244,6 +251,12 @@ class CellposeModelX(CellposeModel):
             interp, anisotropy, do_3D, stitch_threshold);
         self.last_rescale = rescale
         return masks, styles, dP, cellprob, p
+
+    def _run_nets(self, img, net_avg=False, augment=False, tile=True, tile_overlap=0.1, bsize=224, 
+                  return_conv=False, progress=None):
+        # Overridden to control tiling size
+        return super(CellposeModelX, self)._run_nets(img, net_avg, augment, self._tile, tile_overlap, self._bsize, 
+                  return_conv, progress)
 
     def reset_network_times(self):
         """

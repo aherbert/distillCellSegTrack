@@ -105,6 +105,7 @@ def run(args):
         save_directory=save_directory,
         save_y32=args.save_y32,
         save_styles=args.save_styles,
+        bsize=args.tile_size
     )
     use_gpu = segmentation_model.gpu
 
@@ -166,7 +167,8 @@ def run(args):
                 
                 # From cellpose.core.UnetModel._run_tiled
                 tile_dim = imgs.shape[1:]
-                tiles, ysub, xsub, Ly, Lx = make_tiles(imgs)
+                bsize = args.tile_size if args.tile_size > 0 else np.max(tile_dim)
+                tiles, ysub, xsub, Ly, Lx = make_tiles(imgs, bsize=bsize)
                 ny, nx, nchan, ly, lx = tiles.shape
                 tiles = np.reshape(tiles, (ny*nx, nchan, ly, lx))
                 
@@ -270,6 +272,9 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size', type=int,
         default=8,
         help='Batch size (default: %(default)s)')
+    parser.add_argument('--tile-size', type=int,
+        default=224,
+        help='Tile size (default: %(default)s). Use zero to disable tiles.')
     parser.add_argument('--compute-flows',
         default=False,
         action=argparse.BooleanOptionalAction,
