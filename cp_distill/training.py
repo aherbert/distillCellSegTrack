@@ -144,13 +144,14 @@ def train_epoch(net, train_loader, validation_loader, loss_fn, optimiser, device
             next_batch = next(data_iter)
             next_batch = [ _.to(device, non_blocking=True) for _ in next_batch ]
 
-        n += len(x)
+        m = len(x)
+        n += m
 
         y_pred, _, y32_pred = net(x)
         del x
 
         loss = loss_fn(y, y32, y_pred, y32_pred)
-        train_loss += loss.item()
+        train_loss += loss.item() * m
 
         # update model parameters
         loss.backward()
@@ -181,14 +182,15 @@ def train_epoch(net, train_loader, validation_loader, loss_fn, optimiser, device
             next_batch = next(data_iter)
             next_batch = [ _.to(device, non_blocking=True) for _ in next_batch ]
 
-        n += len(x)
+        m = len(x)
+        n += m
 
         with torch.no_grad():
             y_pred, _, y32_pred = net(x)
         del x
 
         loss = loss_fn(y, y32, y_pred, y32_pred)
-        val_loss += loss.item()
+        val_loss += loss.item() * m
 
         del y
         del y32
