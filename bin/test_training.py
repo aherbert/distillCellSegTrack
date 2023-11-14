@@ -153,6 +153,27 @@ def run(args):
         mkldnn=False,
     )
     net = net.to(device)
+    
+    # Add warm start using existing Cellpose model
+    if args.start and len(args.start_params):
+        copy = tuple(args.start_params)
+        d = net.state_dict()
+        state_dict = torch.load(args.start, map_location=device)
+        if logging.DEBUG >= logging.root.level:
+            for name in d:
+                logging.debug('Available parameter: %s', name)
+        d2 = dict()
+        for name, param in state_dict.items():
+            # If the size is the same then use it.
+            # This effectively misses the connections that are incompatible,
+            # e.g. integrating styles from the lowest layer.
+            if not name in d or d[name].size() != param.size():
+                continue
+            if name.startswith(copy):
+                d2[name] = param
+                logging.debug('Copy parameter: %s', name)
+        logging.info(f'Copying {len(d2)} parameters')
+        net.load_state_dict(d2, strict=False)
 
     # Create optimizer
     # Note: Cellpose uses:
@@ -328,6 +349,11 @@ if __name__ == '__main__':
     group.add_argument('--existing', type=Existing,
         choices=list(Existing), default=Existing.error,
         help='Existing checkpoint option (default: %(default)s)')
+    group.add_argument('--start',
+        help='Warm-start training from existing model (default: %(default)s)')
+    group.add_argument('--start-params', nargs='+',
+        default=['downsample', 'upsample', 'output'],
+        help='Warm-start parameters to use [uses prefix matching] (default: %(default)s)')
     group.add_argument('--nbase', nargs='+', type=int,
         default=[2, 32],
         help='Cellpose architecture (default: %(default)s). ' +
