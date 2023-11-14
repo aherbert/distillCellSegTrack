@@ -155,10 +155,15 @@ def run(args):
     net = net.to(device)
     
     # Add warm start using existing Cellpose model
-    if args.start and len(args.start_params):
+    if not args.start is None and len(args.start_params):
+        start_model = args.start
+        if not start_model:
+            with open(os.path.join(args.directory, 'settings.json')) as f:
+                start_model = json.load(f)['model']
+        logging.info('Start model: %s', start_model)
         copy = tuple(args.start_params)
         d = net.state_dict()
-        state_dict = torch.load(args.start, map_location=device)
+        state_dict = torch.load(start_model, map_location=device)
         if logging.DEBUG >= logging.root.level:
             for name in d:
                 logging.debug('Available parameter: %s', name)
@@ -349,8 +354,9 @@ if __name__ == '__main__':
     group.add_argument('--existing', type=Existing,
         choices=list(Existing), default=Existing.error,
         help='Existing checkpoint option (default: %(default)s)')
-    group.add_argument('--start',
-        help='Warm-start training from existing model (default: %(default)s)')
+    group.add_argument('--start', nargs='?', action='store', const='',
+        help='Warm-start training from existing model (default: %(default)s)' +
+        '. Use no argument to auto-select from the dataset.')
     group.add_argument('--start-params', nargs='+',
         default=['downsample', 'upsample', 'output'],
         help='Warm-start parameters to use [uses prefix matching] (default: %(default)s)')
