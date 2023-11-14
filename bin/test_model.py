@@ -159,8 +159,9 @@ def run(args):
         )
         t1 = time.time() - t1
         t1b = np.array(model.reset_network_times()).sum()
-        total1 += t1
-        total1b += t1b
+        if i:
+            total1 += t1
+            total1b += t1b
         m1 = filter_segmentation(masks_array)
 
         # Run student model
@@ -178,8 +179,9 @@ def run(args):
         )
         t2 = time.time() - t2
         t2b = np.array(model2.reset_network_times()).sum()
-        total2 += t2
-        total2b += t2b
+        if i:
+            total2 += t2
+            total2b += t2b
         m2 = filter_segmentation(masks_array)
         logging.info(f'Time Cellpose {t1:.6f}, Student {t2:.6f} ({t2/t1:.6f})')
         logging.info(f'Network Time Cellpose {t1b:.6f}, Student {t2b:.6f} ({t2b/t1b:.6f})')
@@ -221,9 +223,10 @@ def run(args):
     logging.info('Images=%d; Match IoU: min=%.5f, max=%.5f, mean=%.5f, std=%.5f',
         len(all_aji), np.min(all_aji), np.max(all_aji),
         np.mean(all_aji), np.std(all_aji))
-    logging.info(f'Time Cellpose {t1:.6f}, Student {t2:.6f} ({t2/t1:.6f})')
-    logging.info(f'Network Time Cellpose {t1b:.6f}, Student {t2b:.6f} ({t2b/t1b:.6f})')
-    logging.info(f'Non-network Time Cellpose {t1-t1b:.6f}, Student {t2-t2b:.6f} ({(t2-t2b)/(t1-t1b):.6f})')
+    if t1:
+        logging.info(f'Time Cellpose {t1:.6f}, Student {t2:.6f} ({t2/t1:.6f})')
+        logging.info(f'Network Time Cellpose {t1b:.6f}, Student {t2b:.6f} ({t2b/t1b:.6f})')
+        logging.info(f'Non-network Time Cellpose {t1-t1b:.6f}, Student {t2-t2b:.6f} ({(t2-t2b)/(t1-t1b):.6f})')
     t = time.time() - start_time
     logging.info(f'Done (in {t} seconds)')
 
