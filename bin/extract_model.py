@@ -34,6 +34,8 @@ def run(args):
             logging.error(f'Failed to load model: {e}')
             exit(1)
         del state['model_state_dict']
+        if 'iou' in state:
+            state['iou'] = list(state['iou'])        
         s = json.dumps(state, indent=2)
         logging.info(f'Model state: {s}')
         return
