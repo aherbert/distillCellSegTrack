@@ -23,7 +23,7 @@ def run(args):
     import torch
     import torch.nn.functional as F
     from cp_distill.cellpose_ext import CPnetX
-    from cp_distill.rotations import cp_rotate90
+    from cp_distill.transforms import cp_rotate90
     from cellpose.core import check_mkl
     from torch.utils import mkldnn as mkldnn_utils
     from torchmetrics.classification import BinaryJaccardIndex
