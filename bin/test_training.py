@@ -118,10 +118,12 @@ def run(args):
                        project=args.project)
             logging.info(f'Restarted wandb: {wandb_id}')
         else:
+            import re
             wandb_id = args.wandb_id if has_id else wandb.util.generate_id()
-            # Tag with the dataset (remove the default prefix)
+            # Tag with the dataset (remove the default prefix and suffix)
             tags = args.tags
-            tags.append(args.directory.replace('test_data_', ''))
+            tag = args.directory.replace('test_data_', '')            
+            tags.append(re.sub('\d+$', '', tag))
             # Do this early to capture logging to W&B
             wandb.init(id=wandb_id, resume='allow',
                        entity=args.entity,
