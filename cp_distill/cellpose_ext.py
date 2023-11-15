@@ -190,25 +190,33 @@ class CellposeModelX(CellposeModel):
 
         if self._save_times:
             t1 = time.time()
-
-        X = self._to_device(x)
+            X = self._to_device(x)
+            t2 = time.time()
+        else:
+            X = self._to_device(x)
         self.net.eval()
         if self.mkldnn:
             self.net = mkldnn_utils.to_mkldnn(self.net)
         with torch.no_grad():
             y, style, y32 = self.net(X)
         del X
-        y = self._from_device(y)
-        style = self._from_device(style)
+        if self._save_times:
+            t3 = time.time()
+            y = self._from_device(y)
+            style = self._from_device(style)
+            t4 = time.time()
+            net_time = t3 - t2
+            io_time = t4 - t1 - net_time
+            self.network_times.append((net_time, io_time))
+        else:
+            y = self._from_device(y)
+            style = self._from_device(style)
 
         # Commented out. This appears to be legacy code that is not used
         # since conv is not defined.
         #if return_conv:
         #    conv = self._from_device(conv)
         #    y = np.concatenate((y, conv), axis=1)
-
-        if self._save_times:
-            self.network_times.append(time.time() - t1)
 
         # Save input/output
         if self._save_directory:
@@ -267,6 +275,9 @@ class CellposeModelX(CellposeModel):
         -------
         l : list float
             List of previously saved network execution times.
+            Times are tuples of: (net, IO)
+            Where net is the network execution time and
+            IO is the data transfer time to and from the GPU.
         """
         l = self.network_times
         self.network_times = []

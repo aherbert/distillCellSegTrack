@@ -125,8 +125,8 @@ def run(args):
 
     # Run Cellpose
     all_aji = []
-    total1, total1b = 0, 0
-    total2, total2b = 0, 0
+    total1, total2 = 0, 0
+    total1b, total2b = np.zeros(2), np.zeros(2)
     for i, image in enumerate(combined_images):
         logging.info(f'Processing image {i+1}: {image}')
         img = np.load(image)
@@ -158,7 +158,7 @@ def run(args):
             min_size=args.min_size,
         )
         t1 = time.time() - t1
-        t1b = np.array(model.reset_network_times()).sum()
+        t1b = np.array(model.reset_network_times()).sum(axis=0)
         if i:
             total1 += t1
             total1b += t1b
@@ -178,13 +178,14 @@ def run(args):
             model_loaded=True
         )
         t2 = time.time() - t2
-        t2b = np.array(model2.reset_network_times()).sum()
+        t2b = np.array(model2.reset_network_times()).sum(axis=0)
         if i:
             total2 += t2
             total2b += t2b
         m2 = filter_segmentation(masks_array)
         logging.info(f'Time Cellpose {t1:.6f}, Student {t2:.6f} ({t2/t1:.6f})')
-        logging.info(f'Network Time Cellpose {t1b:.6f}, Student {t2b:.6f} ({t2b/t1b:.6f})')
+        logging.info(f'Network Time Cellpose {t1b[0]:.6f}, Student {t2b[0]:.6f} ({t2b[0]/t1b[0]:.6f})')
+        logging.info(f'IO Time Cellpose {t1b[1]:.6f}, Student {t2b[1]:.6f} ({t2b[1]/t1b[1]:.6f})')
 
         if args.save_dir:
             # Save masks
@@ -225,8 +226,9 @@ def run(args):
         np.mean(all_aji), np.std(all_aji))
     if t1:
         logging.info(f'Time Cellpose {t1:.6f}, Student {t2:.6f} ({t2/t1:.6f})')
-        logging.info(f'Network Time Cellpose {t1b:.6f}, Student {t2b:.6f} ({t2b/t1b:.6f})')
-        logging.info(f'Non-network Time Cellpose {t1-t1b:.6f}, Student {t2-t2b:.6f} ({(t2-t2b)/(t1-t1b):.6f})')
+        logging.info(f'Network Time Cellpose {t1b[0]:.6f}, Student {t2b[0]:.6f} ({t2b[0]/t1b[0]:.6f})')
+        logging.info(f'IO Time Cellpose {t1b[1]:.6f}, Student {t2b[1]:.6f} ({t2b[1]/t1b[1]:.6f})')
+        logging.info(f'Non-network Time Cellpose {t1-t1b.sum():.6f}, Student {t2-t2b.sum():.6f} ({(t2-t2b.sum())/(t1-t1b.sum()):.6f})')
     t = time.time() - start_time
     logging.info(f'Done (in {t} seconds)')
 
