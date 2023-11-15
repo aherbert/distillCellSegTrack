@@ -16,6 +16,7 @@ import argparse
 from cp_distill.bin_utils import dir_path
 
 def run(args):
+    import os
     import logging
     from cp_distill.datasets import find_images, CPDataset
     if args.load:
@@ -26,8 +27,23 @@ def run(args):
         format='[%(asctime)s] %(levelname)s - %(message)s',
         level=args.log_level)
 
+    # Cannot validate without loading data
+    args.min_objects *= args.load
+    if args.min_objects:
+        from cellpose.dynamics import compute_masks
+        import numpy as np
+
     for d in args.directory:
         logging.info(f'Processing dataset: {d}')
+        images = find_images(d, prefix='bad_input')
+        if images:
+            logging.info(f'Dataset: {d}: invalid images {len(images)}')
+            if args.restore_invalid:
+                logging.info(f'Dataset: {d}: restoring invalid images')
+                for img in images:
+                    name = f'bad_input_{img}.npy'
+                    to = f'input_{img}.npy'
+                    os.rename(os.path.join(d, name), os.path.join(d, to))
         images = find_images(d)
         logging.debug('Image tile numbers: %s', images)
         if not images:
@@ -48,10 +64,13 @@ def run(args):
         logging.info(f"Dataset: {d} : tiles = {len(dataset)} : tile dimensions {tile}")
 
         # Try running through a batch loader
+        objects = []
+        removed = 0
         if args.load:
             start_time = time.time()
             loader = DataLoader(dataset, batch_size=args.batch_size,
                 num_workers=args.num_workers)
+            index = 0
             for i, (x, y, y32) in enumerate(loader):
                 if i == 0:
                     s1, s2, s3 = x.shape, y.shape, y32.shape
@@ -61,6 +80,34 @@ def run(args):
                     if x.shape != s1 or y.shape != s2 or y32.shape != s3:
                         logging.info("Data load shapes x=%s, y=%s, y32=%s [batch=%d]",
                                       x.shape, y.shape, y32.shape, i)
+                if args.min_objects:
+                    # Predict the mask from the y32 data
+                    # Identify input with too few objects
+                    y = y.detach().cpu().numpy()
+                    for j in range(len(y)):
+                        img = images[index]
+                        index += 1
+                        dP, cellprob = y[j,:2], y[j,2]
+                        # Run with defaults on the CPU since it does
+                        # not really matter about scaling. The purpose is
+                        # to identify blank tiles.
+                        m, p = compute_masks(dP, cellprob)
+                        # Count objects
+                        count = np.max(m)
+                        path = os.path.join(d, f'input_{img}.npy')
+                        if count < args.min_objects and args.rename_invalid:
+                            to = f'bad_input_{img}.npy'
+                            os.rename(path, os.path.join(d, to))
+                            logging.warning(f'Renamed {path} to {to} : Objects = {count}')
+                            removed += 1
+                        else:
+                            objects.append(count)
+                            logging.info(f'Image {path} : Objects = {count}')
+
+            if args.min_objects:
+                logging.info(f'Dataset {d} : Objects = n=%d; min=%s; max=%s; mean=%.5f, std=%.5f : Removed {removed}',
+                    len(objects), np.min(objects), np.max(objects), np.mean(objects), np.std(objects))
+
             t = time.time() - start_time
             logging.info(f'Loaded dataset {d} (in {t:.5f} seconds)')
 
@@ -89,6 +136,17 @@ if __name__ == '__main__':
     parser.add_argument('--num-workers', type=int,
         default=0,
         help='Number of workers for asynchronous data loading (default: %(default)s)')
+    parser.add_argument('--min-objects', type=int,
+        default=0,
+        help='Predict objects from y32 data and identify invalid tiles (default: %(default)s)')
+    parser.add_argument('--restore-invalid',
+        default=False,
+        action=argparse.BooleanOptionalAction,
+        help='Restore previous invalid input images by renaming (default: %(default)s)')
+    parser.add_argument('--rename-invalid',
+        default=True,
+        action=argparse.BooleanOptionalAction,
+        help='Rename invalid input images [objects < min objects] (default: %(default)s)')
 
     args = parser.parse_args()
     run(args)
