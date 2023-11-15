@@ -42,7 +42,7 @@ def run(args):
         n = 0
         while True:
             n += 1
-            base = f'{prefix}{n}'
+            base = f'{prefix}.{n}'
             if base in used:
                 continue
             if not (os.path.isfile(base + '.pt') or os.path.isfile(base + '.json')):
