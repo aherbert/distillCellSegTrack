@@ -83,6 +83,19 @@ def run(args):
             continue
         f = open(out, "w")
         subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=f)
+
+    if args.dry_run:
+        # https://patorjk.com/software/taag/#p=display&f=Alligator2&t=Dry%20run
+        font = """
+:::::::::  :::::::::  :::   :::      :::::::::  :::    ::: ::::    ::: 
+:+:    :+: :+:    :+: :+:   :+:      :+:    :+: :+:    :+: :+:+:   :+: 
++:+    +:+ +:+    +:+  +:+ +:+       +:+    +:+ +:+    +:+ :+:+:+  +:+ 
++#+    +:+ +#++:++#:    +#++:        +#++:++#:  +#+    +:+ +#+ +:+ +#+ 
++#+    +#+ +#+    +#+    +#+         +#+    +#+ +#+    +#+ +#+  +#+#+# 
+#+#    #+# #+#    #+#    #+#         #+#    #+# #+#    #+# #+#   #+#+# 
+#########  ###    ###    ###         ###    ###  ########  ###    ####
+"""
+        print(font)
     logging.info('Done')
 
 if __name__ == '__main__':
