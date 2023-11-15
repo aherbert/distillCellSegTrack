@@ -58,7 +58,9 @@ def run(args):
             print('create run name')
             # Start with the dataset name
             # (remove the default prefix and model suffix)
-            name = [arguments[0].replace('test_data_', '').replace('_Hoechst', '')]
+            name = arguments[0].replace('test_data_', '')
+            name = re.sub('_Hoechst\d+', '', name)
+            name = [name]
             for a in arguments[1:]:
                 # Detect new argument
                 if a[0] == '-':
