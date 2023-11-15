@@ -55,7 +55,6 @@ def run(args):
 
         # Create a name
         if not '--run-name' in arguments:
-            print('create run name')
             # Start with the dataset name
             # (remove the default prefix and model suffix)
             name = [arguments[0].replace('test_data_', '').replace('_Hoechst', '')]
