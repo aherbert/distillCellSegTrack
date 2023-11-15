@@ -21,8 +21,8 @@ def cp_rotate90(y, k: int=1):
 
     Parameters
     ----------
-    y : Tensor (3 x X x Y)
-        Cellpose output (horizontal flow, vertical flow, map)
+    y : Tensor (3 x Y x X)
+        Cellpose output (vertical flow, horizontal flow, map)
     k : int
         Number of 90-degree rotations (should be in [1, 3])
 
@@ -33,8 +33,8 @@ def cp_rotate90(y, k: int=1):
 
     Returns
     -------
-    y : Tensor (3 x X x Y)
-        Rotated Cellpose output (horizontal flow, vertical flow, map)
+    y : Tensor (3 x Y x X)
+        Rotated Cellpose output (vertical flow, horizontal flow, map)
     """
     if k < 0:
         raise Exception("k must be positive")
@@ -66,3 +66,51 @@ def cp_rotate90(y, k: int=1):
         ry[1] = -ry[1]
 
     return ry
+
+def cp_flip(y, k: int=1):
+    """
+    Flip the Cellpose outputs horizontally and/or vertically. This involves
+    flipping the original outputs and negatation of layers.
+
+    Parameters
+    ----------
+    y : ND array (3 x Y x X)
+        Cellpose output (vertical flow, horizontal flow, map)
+    k : int
+        Flips (should be in [1, 3]). 1 = horizontal; 2 = vertical; 3 = both.
+
+    Raises
+    ------
+    Exception
+        If k is negative.
+
+    Returns
+    -------
+    y : ND array (3 x Y x X)
+        Flipped Cellpose output (vertical flow, horizontal flow, map)
+    """
+    if k < 0:
+        raise Exception("k must be positive")
+
+    k = k % 4
+    if k == 0:
+        return y
+
+    if k & 1 == 1:
+        # Flip horizontal
+        y = y[..., ::-1]
+
+    if k & 2 == 2:
+        # Flip vertical
+        y = y[:, ::-1]
+
+    # Fix view before updating the underlying data
+    y = y.copy()
+
+    # map flows
+    if k & 1 == 1:
+        y[1] = -y[1]
+    if k & 2 == 2:
+        y[0] = -y[0]
+
+    return y
