@@ -105,8 +105,9 @@ def run(args):
                             logging.info(f'Image {path} : Objects = {count}')
 
             if args.min_objects:
-                logging.info(f'Dataset {d} : Objects = n=%d; min=%s; max=%s; mean=%.5f, std=%.5f : Removed {removed}',
-                    len(objects), np.min(objects), np.max(objects), np.mean(objects), np.std(objects))
+                logging.info(f'Dataset {d} : Objects = n=%d; min=%s; max=%s; mean=%.5f, std=%.5f : Removed {removed} (%.2f%%)',
+                    len(objects), np.min(objects), np.max(objects), np.mean(objects), np.std(objects),
+                    100 * removed / (removed + len(objects)))
 
             t = time.time() - start_time
             logging.info(f'Loaded dataset {d} (in {t:.5f} seconds)')
