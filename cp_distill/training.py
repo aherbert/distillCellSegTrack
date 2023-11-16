@@ -14,6 +14,7 @@
 import torch
 import torch.nn.functional as F
 from torch import nn
+from cp_distill.transforms import cp_flip, cp_flip_image
 
 class MapLoss(torch.nn.Module):
     def __init__(self, binary=True, channels=None):
@@ -97,6 +98,67 @@ class CellposeLoss(torch.nn.Module):
         loss2 = self.criterion2(y_pred[:,2], lbl)
         loss = loss + loss2
         return loss
+
+class FlipTransformer:
+    def __init__(self, size, flips, rng):
+        """
+        Create a transformer for training data that flips the input and output
+        files.
+
+        Parameters
+        ----------
+        size : int
+            Size of the dataset.
+        flips : int
+            Type of flips (0=None; 1=Horizontal; 2=Vertical; 3=Both)
+        rng : numpy.random._generator.Generator
+            Source of randomness.
+            Must provide an integers(high, size=size) method.
+
+        Returns
+        -------
+        An instance.
+        """
+        self._size = size
+        self._flips = flips & 3
+        self._rng = rng
+
+    def sample(self):
+        """
+        Create the random flip for each item. Must be called to initialise
+        the random transform for each item.
+        """
+        if self._flips == 2:
+            # Sample k in {0, 2}
+            self._k = self._rng.integers(2, size=self._size) * 2
+        else:
+            # Sample k in [0, flips]
+            self._k = self._rng.integers(self._flips + 1, size=self._size)
+
+    def transform(self, idx, x, y):
+        """
+        Transform the tiles.
+
+        Parameters
+        ----------
+        idx : int
+            Item index.
+        x : ND array (2 x Y x X)
+            Input tile
+        x : ND array (3 x Y x X)
+            Output tile (vertical flow, horizontal flow, map)
+
+        Returns
+        -------
+        An instance.
+        """
+        k = self._k[idx]
+        x = cp_flip_image(x, k)
+        y = cp_flip(y, k)
+        return x, y
+
+    def __call__(self, *args, **kwargs):
+        return self.transform(*args)
 
 def train_epoch(net, train_loader, validation_loader, loss_fn, optimiser, device):
     """
