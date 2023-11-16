@@ -106,11 +106,11 @@ def run(args):
         sy = F.sigmoid(y[2])
         p = torch.where(sy > 0.5, 1.0, 0.0)
 
-        loss_p = F.binary_cross_entropy_with_logits(y[2], sy) #p)
+        loss_p = F.binary_cross_entropy_with_logits(y[2], sy)
+        loss_p2 = F.soft_margin_loss(y[2], torch.where(sy > 0.5, 1.0, -1.0))
 
-        iou = jaccard(p, p)
-        logging.info('Rotation %3d loss : y32 mse %10.6g; flows mse (%10.6g, %10.6g); p bce %10.6g; p IoU %10.6g',
-                     0, 0, 0, 0, loss_p, iou)
+        logging.info('Rotation %3d loss : y32 mse %10.6g; flows mse (%10.6g, %10.6g); p bce %10.6g; p softmargin %10.6g; p IoU %10.6g',
+                     0, 0, 0, 0, loss_p, loss_p2, 1)
 
         if args.save_dir:
             name = os.path.splitext(os.path.basename(image))[0]
@@ -186,12 +186,13 @@ def run(args):
             loss_hflow = F.mse_loss(yy[1,:], ry[1,:])
             # Binary cross entropy compare inputs to a target in [0, 1]
             # We could use p in {0, 1} but here use the sigmoid of y.
-            loss_p = F.binary_cross_entropy_with_logits(yy[2], rsy) #p)
+            loss_p = F.binary_cross_entropy_with_logits(yy[2], rsy)
+            loss_p2 = F.soft_margin_loss(yy[2], torch.where(rsy > 0.5, 1.0, -1.0))
 
             pp = F.sigmoid(yy[2])
             iou = jaccard(pp, rp)
-            logging.info('Rotation %3d loss : y32 mse %10.6g; flows mse (%10.6g, %10.6g); p bce %10.6g; p IoU %10.6g',
-                         k*90, loss_32, loss_vflow, loss_hflow, loss_p, iou)
+            logging.info('Rotation %3d loss : y32 mse %10.6g; flows mse (%10.6g, %10.6g); p bce %10.6g; p softmargin %10.6g; p IoU %10.6g',
+                         k*90, loss_32, loss_vflow, loss_hflow, loss_p, loss_p2, iou)
             del yy
             del yy32
         del X
