@@ -122,6 +122,7 @@ def run(args):
     model2.nbase = net.nbase
 
     threshold = args.threshold
+    batch_student = args.batch_size_student if args.batch_size_student > 0 else args.batch_size
 
     # Run Cellpose
     all_aji = []
@@ -169,7 +170,7 @@ def run(args):
         masks_array, flows, styles = model2.eval(
             img,
             channels=channels,
-            batch_size=args.batch_size,
+            batch_size=batch_student,
             diameter=diameter, normalize=False,
             cellprob_threshold=args.cellprob_threshold,
             flow_threshold=args.flow_threshold, interp=args.interp,
@@ -270,6 +271,9 @@ if __name__ == '__main__':
     group.add_argument('--batch-size', type=int,
         default=128,
         help='Batch size (default: %(default)s)')
+    group.add_argument('--batch-size-student', type=int,
+        default=0,
+        help='Batch size for the student model (default: %(default)s)')
     parser.add_argument('--tile-size', type=int,
         default=224,
         help='Tile size (default: %(default)s). Use zero to disable tiles.')
