@@ -55,10 +55,10 @@ def memory(device=None):
         
     Returns
     -------
-    tensor(memory_allocated, max_memory_allocated, memory_reserved, max_memory_reserved)
+    tuple(memory_allocated, max_memory_allocated, memory_reserved, max_memory_reserved)
     """
     # https://pytorch.org/docs/stable/notes/cuda.html#cuda-memory-management
-    return torch.tensor((torch.cuda.memory_allocated(device=device),
+    return (torch.cuda.memory_allocated(device=device),
             torch.cuda.max_memory_allocated(device=device),
             torch.cuda.memory_reserved(device=device),
-            torch.cuda.max_memory_reserved(device=device)), dtype=int)
+            torch.cuda.max_memory_reserved(device=device))
