@@ -78,21 +78,16 @@ def cp_flip(y, k: int=1):
         Cellpose output (vertical flow, horizontal flow, map)
     k : int
         Flips (should be in [1, 3]). 1 = horizontal; 2 = vertical; 3 = both.
-
-    Raises
-    ------
-    Exception
-        If k is negative.
+        Treated as an unsigned integer. Only the lower 2 bits are used.
 
     Returns
     -------
     y : ND array (3 x Y x X)
-        Flipped Cellpose output (vertical flow, horizontal flow, map)
+        Flipped Cellpose output (vertical flow, horizontal flow, map).
+        Returns a copy if a flip was made; otherwise the original data.
     """
-    if k < 0:
-        raise Exception("k must be positive")
-
-    k = k % 4
+    # k % 4
+    k = k & 3
     if k == 0:
         return y
 
@@ -114,3 +109,37 @@ def cp_flip(y, k: int=1):
         y[0] = -y[0]
 
     return y
+
+def cp_flip_image(y, k: int=1):
+    """
+    Flip the image horizontally and/or vertically.
+
+    Parameters
+    ----------
+    y : ND array (n x Y x X)
+        Image
+    k : int
+        Flips (should be in [1, 3]). 1 = horizontal; 2 = vertical; 3 = both.
+        Treated as an unsigned integer. Only the lower 2 bits are used.
+
+    Returns
+    -------
+    y : ND array (n x Y x X)
+        Flipped output. Returns a copy if a flip was made; otherwise the
+        original data.
+    """
+    # k % 4
+    k = k & 3
+    if k == 0:
+        return y
+
+    if k & 1 == 1:
+        # Flip horizontal
+        y = y[..., ::-1]
+
+    if k & 2 == 2:
+        # Flip vertical
+        y = y[:, ::-1]
+
+    # Fix view
+    return y.copy()
