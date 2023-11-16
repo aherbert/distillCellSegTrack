@@ -110,13 +110,13 @@ def cp_flip(y, k: int=1):
 
     return y
 
-def cp_flip_image(y, k: int=1):
+def cp_flip_image(x, k: int=1):
     """
     Flip the image horizontally and/or vertically.
 
     Parameters
     ----------
-    y : ND array (n x Y x X)
+    x : ND array (n x Y x X)
         Image
     k : int
         Flips (should be in [1, 3]). 1 = horizontal; 2 = vertical; 3 = both.
@@ -124,22 +124,22 @@ def cp_flip_image(y, k: int=1):
 
     Returns
     -------
-    y : ND array (n x Y x X)
+    x : ND array (n x Y x X)
         Flipped output. Returns a copy if a flip was made; otherwise the
         original data.
     """
     # k % 4
     k = k & 3
     if k == 0:
-        return y
+        return x
 
     if k & 1 == 1:
         # Flip horizontal
-        y = y[..., ::-1]
+        x = x[..., ::-1]
 
     if k & 2 == 2:
         # Flip vertical
-        y = y[:, ::-1]
+        x = x[:, ::-1]
 
     # Fix view
-    return y.copy()
+    return x.copy()
