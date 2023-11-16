@@ -37,3 +37,28 @@ def optimizer_to(optim, device):
                     subparam.data = subparam.data.to(device)
                     if subparam._grad is not None:
                         subparam._grad.data = subparam._grad.data.to(device)
+
+def memory(device=None):
+    """
+    Returns a tuple of the CUDA memory usage for the device.
+    Returns statistic for the current device, given by current_device(),
+    if device is None (default).
+    
+    Use memory_allocated and max_memory_allocated to monitor memory occupied by
+    tensors, and use memory_reserved and max_memory_reserved to monitor
+    the total amount of memory managed by the caching allocator.
+
+    Parameters
+    ----------
+    device : torch.device (default: None)
+        Torch device.
+        
+    Returns
+    -------
+    tensor(memory_allocated, max_memory_allocated, memory_reserved, max_memory_reserved)
+    """
+    # https://pytorch.org/docs/stable/notes/cuda.html#cuda-memory-management
+    return torch.tensor((torch.cuda.memory_allocated(device=device),
+            torch.cuda.max_memory_allocated(device=device),
+            torch.cuda.memory_reserved(device=device),
+            torch.cuda.max_memory_reserved(device=device)), dtype=int)
