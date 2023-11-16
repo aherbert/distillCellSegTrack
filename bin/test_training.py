@@ -230,12 +230,19 @@ def run(args):
     tiles = rng.choice(tiles, tsize, replace=False) if tsize > 0 else []
     logging.info(f'Size train {len(y)} : validation {len(z)} : test {len(tiles)}')
 
+    transform = None
+    if args.flip:
+        from cp_distill.training import FlipTransformer
+        transform = FlipTransformer(len(y), args.flip, rng)
+
     # Note: Loss function does not use y32
     use_gpu = device.type == 'cuda'
     pin_memory_device = args.device if use_gpu else ''
-    train_loader = DataLoader(CPDataset(y, args.directory, load_y32=False),
+    train_loader = DataLoader(
+        CPDataset(y, args.directory, load_y32=False, transform=transform),
         batch_size=args.batch_size, num_workers=args.num_workers,
         pin_memory=use_gpu, pin_memory_device=pin_memory_device)
+    # Always validate without transform
     validation_loader = DataLoader(CPDataset(z, args.directory, load_y32=False),
         batch_size=args.batch_size, num_workers=args.num_workers,
         pin_memory=use_gpu, pin_memory_device=pin_memory_device)
@@ -266,6 +273,9 @@ def run(args):
     checkpoint_name_best = checkpoint_name + '.best'
 
     for i in range(args.epochs):
+        if transform:
+            transform.sample()
+
         epoch += 1
         train_loss, val_loss = \
             train_epoch(net, train_loader, validation_loader, loss_fn,
@@ -420,6 +430,9 @@ if __name__ == '__main__':
         default=False,
         action=argparse.BooleanOptionalAction,
         help='Convert the flows in the background to zero (default: %(default)s)')
+    group.add_argument('--flip', type=int,
+        default=0,
+        help='Perform random flips each epoch: 0=None; 1=Horizontal; 2=Vertical; 3=Both (default: %(default)s)')
 
     group = parser.add_argument_group('Testing')
     group.add_argument('--testing-size', type=int,
