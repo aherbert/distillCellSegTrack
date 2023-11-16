@@ -59,7 +59,7 @@ class CPDataset(Dataset):
     and output tiles from the Cellpose network:
 
     input_N.npy: input tile (2 x Y x X) [target, nuclei]
-    output_N.npy: output tile (3 x Y x X) [horizontal flow, vertical flow, map]
+    output_N.npy: output tile (3 x Y x X) [vertical flow, horizontal flow, map]
     output32_N.npy: output tile (32 x Y x X) [penultimate Cellpose upsample layer]
 
     where N is the image number.
