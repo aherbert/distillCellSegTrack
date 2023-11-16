@@ -68,6 +68,8 @@ class CPDataset(Dataset):
     images to create a 2 channel input.
 
     Data are returned as torch Tensors.
+    
+    Transform functions
 
     Parameters
     -------------------
@@ -81,14 +83,21 @@ class CPDataset(Dataset):
     load_y32: bool (default: False)
         Load the 32-channel upsample layer. Only load this if it is required
         for the loss function.
+
+    transform: function (default: None)
+        Function to transform the tiles:
+        (idx, (2 x Y x X), (3 x Y x X)) -> ((2 x Y x X), (3 x Y x X))
     """
     def __init__(self, images, image_directory,
-                 load_y32=False):
+                 load_y32=False, transform=None):
         self._images = np.array(images).reshape(-1)
         self._directory = image_directory
         if len(images) == 0:
             raise Exception("No image numbers provided")
         self._load_y32 = load_y32
+        self._transform = transform
+        if load_y32 and not transform is None:
+            raise Exception("Cannot load y32 with transforms")
         # This constructor could validate all images exist.
         # Currently an invalid constructor will throw errors when
         # retrieving a dataset item
@@ -109,6 +118,8 @@ class CPDataset(Dataset):
         if x.ndim == 2:
             # Note: No noticeable benefit from caching this
             x = np.array([x, np.zeros(x.shape, dtype=np.float32)])
+        if self._transform:
+            x, y = self._transform(idx, x, y)
         return from_numpy(x), from_numpy(y), from_numpy(y32)
 
 # Load Cellpose tiled images from a directory.
