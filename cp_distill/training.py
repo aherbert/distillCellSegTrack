@@ -60,11 +60,11 @@ class MapLoss(torch.nn.Module):
         return F.binary_cross_entropy_with_logits(y_pred, s, reduction='mean')
 
 class CellposeLoss(torch.nn.Module):
-    def __init__(self, zero_background=False):
+    def __init__(self, zero_background=False, soft_margin=False):
         """
         Create a loss function using the Cellpose map/flow output.
-        Uses binary cross entropy with logits for the map.
         Uses mse_loss for the flows.
+        Uses binary cross entropy with logits or soft margin for the map.
 
         Parameters
         ----------
@@ -78,9 +78,13 @@ class CellposeLoss(torch.nn.Module):
         """
         super(CellposeLoss, self).__init__()
         self._zero_background = zero_background
+        self._soft_margin = soft_margin
         # Based on cellpose.core.UnetModel._set_criterion
         self.criterion  = nn.MSELoss(reduction='mean')
-        self.criterion2 = nn.BCEWithLogitsLoss(reduction='mean')
+        if soft_margin:
+            self.criterion2 = nn.SoftMarginLoss(reduction='mean')
+        else:
+            self.criterion2 = nn.BCEWithLogitsLoss(reduction='mean')
 
     def forward(self, y, y32, y_pred, y32_pred):
         # Based on cellpose.models.CellposeModel.loss_fn
@@ -89,7 +93,8 @@ class CellposeLoss(torch.nn.Module):
         # flows computed from a mask. Thus we do not require the 5-fold
         # factor: veci = 5. * y[:,:2]
         veci = y[:,:2]
-        lbl = torch.where(y[:,2] > 0, 1.0, 0.0)
+        # convert soft_margin flag for other to -1.0 or 0.0
+        lbl = torch.where(y[:,2] > 0, 1.0, -self._soft_margin)
         if self._zero_background:
             veci[:,0] *= lbl
             veci[:,1] *= lbl

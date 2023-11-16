@@ -251,7 +251,8 @@ def run(args):
     test_interval = np.max([1, args.testing_interval])
 
     # Create training objects
-    loss_fn = CellposeLoss(zero_background=args.zero_background)
+    loss_fn = CellposeLoss(zero_background=args.zero_background,
+                           soft_margin=args.soft_margin)
     # Worse using BCE on the flows. They must have the same magnitude.
     #loss_fn = MapLoss(binary=True)
     # Worse if the target is not binary
@@ -430,6 +431,10 @@ if __name__ == '__main__':
         default=False,
         action=argparse.BooleanOptionalAction,
         help='Convert the flows in the background to zero (default: %(default)s)')
+    group.add_argument('--soft-margin',
+        default=False,
+        action=argparse.BooleanOptionalAction,
+        help='Use soft margin loss for the map; else BCE with logits (default: %(default)s)')
     group.add_argument('--flip', type=int,
         default=0,
         help='Perform random flips each epoch: 0=None; 1=Horizontal; 2=Vertical; 3=Both (default: %(default)s)')
