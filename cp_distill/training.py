@@ -229,7 +229,6 @@ def train_epoch(net, train_loader, validation_loader, loss_fn, optimiser, device
         del y32
         del y_pred
         del y32_pred
-        torch.cuda.empty_cache()
 
     train_loss /= n
 
@@ -263,10 +262,7 @@ def train_epoch(net, train_loader, validation_loader, loss_fn, optimiser, device
         del y32
         del y_pred
         del y32_pred
-        torch.cuda.empty_cache()
 
     val_loss /= n
-
-    torch.cuda.empty_cache()
 
     return train_loss, val_loss
