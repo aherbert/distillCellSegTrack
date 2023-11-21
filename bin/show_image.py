@@ -13,7 +13,7 @@
 # ------------------------------------------------------------------------------
 
 """
-Displays an numpy array image using napari.
+Displays a numpy array image using napari.
 """
 
 import argparse
@@ -36,11 +36,34 @@ def run(args):
         images = [images]
 
     viewer = napari.Viewer()
+    bsize = args.tile_size
+    tile_overlap = args.tile_overlap
     for f in images:
         image = np.load(f)
         axis = None if image.ndim == 2 else args.axis
         viewer.add_image(image, name=os.path.basename(f),
                          channel_axis=axis, blending='additive')
+        # Draw tiles
+        if bsize and image.ndim < 4:
+            Ly, Lx = image.shape if image.ndim == 2 else np.delete(image.shape, axis)
+            # Adapted from cellpose.transforms.make_tiles
+            bsizeY, bsizeX = min(bsize, Ly), min(bsize, Lx)
+            bsizeY = np.int32(bsizeY)
+            bsizeX = np.int32(bsizeX)
+            # tiles overlap by 10% tile size
+            ny = 1 if Ly<=bsize else int(np.ceil((1.+2*tile_overlap) * Ly / bsize))
+            nx = 1 if Lx<=bsize else int(np.ceil((1.+2*tile_overlap) * Lx / bsize))
+            ystart = np.linspace(0, Ly-bsizeY, ny).astype(int)
+            xstart = np.linspace(0, Lx-bsizeX, nx).astype(int)
+            polygons = []
+            for j in range(len(ystart)):
+                y, yy = ystart[j], ystart[j]+bsizeY
+                for i in range(len(xstart)):
+                    x, xx = xstart[i], xstart[i]+bsizeX
+                    polygons.append(np.array([[y, x], [y, xx], [yy, xx], [yy, x], [y, x]]))
+            viewer.add_shapes(polygons, shape_type='Path', name='tiles',
+                edge_color='#ff5500ff', edge_width=5)
+
     napari.run()
 
 if __name__ == '__main__':
@@ -54,6 +77,12 @@ if __name__ == '__main__':
     parser.add_argument('--axis', type=int,
         default=0,
         help='Channel axis for ND images (default: %(default)s)')
+    parser.add_argument('--tile-size', type=int,
+        default=0,
+        help='Tile size to overlay (default: %(default)s). Cellpose uses 224.')
+    parser.add_argument('--tile-overlap', type=float,
+        default=0.1,
+        help='Tile overlap (default: %(default)s)')
 
     args = parser.parse_args()
     run(args)
