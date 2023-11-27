@@ -226,7 +226,7 @@ def run(args):
         tsize = np.min([tsize, args.testing_size])
     rng = np.random.default_rng(seed=args.data_seed)
     y, z = train_test_split(rng.choice(images, size, replace=False),
-                            test_size=args.test_size, shuffle=False)
+                            test_size=args.validation_size, shuffle=False)
     tiles = rng.choice(tiles, tsize, replace=False) if tsize > 0 else []
     logging.info(f'Size train {len(y)} : validation {len(z)} : test {len(tiles)}')
 
@@ -403,9 +403,9 @@ if __name__ == '__main__':
     group.add_argument('--seed', type=int,
         default=0xdeadbeef,
         help='Random seed for initial model (default: %(default)s)')
-    group.add_argument('--test-size', type=float,
+    group.add_argument('--validation-size', type=float,
         default=0.1,
-        help='Size for the test data (default: %(default)s)')
+        help='Size for the validation data (default: %(default)s)')
     group.add_argument('--lr', dest='learning_rate', type=float,
         default=0.01,
         help='The learning rate (default: %(default)s)')
